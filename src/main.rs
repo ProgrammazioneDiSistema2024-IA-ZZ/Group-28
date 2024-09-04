@@ -84,7 +84,8 @@ impl Mouse{
 
     fn disattivazione_conferma(&mut self)->i32{                        // AVVIA lA FUNZIONE O SPEGNE TUTTO
         let mut risposta=2;
-        if self.pos_y<=self.pos_prec_y+self.range_conferma && self.pos_y>=self.pos_prec_y-self.range_conferma && self.is_active{
+        if self.pos_y<=self.pos_prec_y+self.range_conferma && self.pos_y>=self.pos_prec_y-self.range_conferma && self.is_active
+            && self.pos_x>=WIDTH-self.range_conferma{
             funzione_di_back_up();
             risposta=1;}
         self.is_active=false;
