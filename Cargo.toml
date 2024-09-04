@@ -1,0 +1,10 @@
+[package]
+name = "ProgettoReba"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4"
+sysinfo = "0.29"
+druid = "0.8.3"
+rdev = "0.5.3"
