@@ -8,7 +8,7 @@
 --- Metterlo in background*/
 
 use std::fs::{read_dir, create_dir, copy, OpenOptions, metadata};
-use std::io::{BufRead, BufReader, ErrorKind, Write};
+use std::io::{BufRead, BufReader, Write};
 use std::process::id;
 use std::thread::{spawn, sleep};
 use std::time::{Duration, SystemTime};
@@ -206,12 +206,16 @@ fn funzione_di_back_up(){
     let numero_file;                                                    // CONTATORE DEI FILE
     let mut numero_cartelle=0;                                               // CONTATORE SOTTO-DIRECTORY
     let (src_clone,dest_clone)=(directory_sorgente.clone(),directory_destinazione.clone());
-
-    if let Err(err)=create_dir(directory_destinazione.clone()){       // CREO LA DIRECTORY OBIETTIVO
-        println!("{}",err.kind());
-        spawn(move || crea_finestra_errore(err.kind()));
+    
+    if read_dir(directory_sorgente.clone()).is_err(){            // VERIFICA SE ESISTE LA DIRECTORY SORGENTE
+        println!("Directory '{}' non trovata",directory_sorgente.clone());
+        spawn(move || crea_finestra_errore("\nDirectory sorgente non trovata"));
         return;}
-
+    if create_dir(directory_destinazione.clone()).is_err(){       // CREO LA DIRECTORY OBIETTIVO
+        println!("Errore nella creazione di '{}'",directory_destinazione.clone());
+        spawn(move || crea_finestra_errore("\nImpossibile creare la directory di destinazione"));
+        return;}
+    
     spawn(|| crea_finestra_successo(src_clone,dest_clone));      // LANCIA LA FINESTRA
 
     if versione==0{
@@ -231,12 +235,11 @@ fn crea_finestra_successo(src:String,dest:String){                         // CR
         panic!("Errore nel lancio dell'applicazione");}                                // ERRORE NON RECUPERABILE
     return;}
 
-fn crea_finestra_errore(msg: ErrorKind){                         // CREA LA FINESTRA DI ERRORE
-    let text =format!("\n\nErrore: {}",msg);                     // TESTO DA SCRIVERE
-    let font=FontDescriptor::new(FontFamily::SANS_SERIF).with_size(30.0);
-    let label=Label::new(text).with_text_color(Color::WHITE).with_font(font);           // BLOCCO INTERNO CON IL TESTO
+fn crea_finestra_errore(msg: &str){                         // CREA LA FINESTRA DI ERRORE
+    let font=FontDescriptor::new(FontFamily::SANS_SERIF).with_size(30.0);   // FONT DEL TESTO
+    let label=Label::new(msg).with_text_color(Color::WHITE).with_font(font);           // BLOCCO INTERNO CON IL TESTO
     let flex=Flex::column().with_child(label).background(Color::RED);        // FLEX DI ALLINEAMENTO ORIZZONTALE
-    let window=WindowDesc::new(flex).window_size((600.0,300.0));    // CREO LA FINESTRA DI ERRORE
+    let window=WindowDesc::new(flex).window_size((650.0,200.0));    // CREO LA FINESTRA DI ERRORE
     if AppLauncher::with_window(window).launch(()).is_err(){
         panic!("Errore nel lancio dell'applicazione");}                                // ERRORE NON RECUPERABILE
     return;}
@@ -246,14 +249,14 @@ fn main(){
     let mut attesa_comando=1;                                 // RAPPRESNTA IL COMANDO ATTESO (1:RETTANGOLO,2:MENO)
 
     let callback_comando=move|event:Event|{
-        if attesa_comando==1{
+        if attesa_comando==1{            // CASO DEL COMANDO DEL RETTANGOLO
             match event.event_type{
-                EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_rettangolo(x,y),
-                EventType::ButtonPress(_)=>mouse.inizio_attesa(),
-                EventType::ButtonRelease(_)=>attesa_comando=mouse.fine_attesa(),
-                EventType::KeyPress(_)=>panic!("Processo interrotto"),
+                EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_rettangolo(x,y),    // SE TI MUOVI
+                EventType::ButtonPress(_)=>mouse.inizio_attesa(),                                 // CLICK->ATTIVO LA LETTURA DEL RETTANGOLO
+                EventType::ButtonRelease(_)=>attesa_comando=mouse.fine_attesa(),                 // SE COMPLETI SI PASSA ALLA FFASE 2
+                EventType::KeyPress(_)=>panic!("Processo interrotto"),                         // ESCAPE
                 _=>{}}}
-        else{
+        else{                               // CASO DEL COMANDO DI CONFERMA
             match event.event_type{
                 EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_conferma(x,y),             // SE TI MUOVI
                 EventType::ButtonPress(_)=>mouse.attivazione_conferma(),                  // CLICK->ATTIVO (FORSE) IL COMANDO
