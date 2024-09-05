@@ -189,12 +189,13 @@ fn scrivi_ogni_tanto(){                              // SCRIVE MESSAGGI A INTERV
     let mut msg;
     let mut ora: DateTime<Utc>;                                            // PER OTTENERE L'ORA IN FORMATO LEGGIBILE
     let mut uso;
+    let pid=id();
     loop{
         sleep(Duration::from_secs(120));                           // ATTENDI...
         system.refresh_all();                                            // LEGGE I DATI DAL SISTEMA
         ora=SystemTime::now().into();
-        uso=system.process(Pid::from_u32(id())).expect("Processo non trovato").cpu_usage();
-        msg=format!("\nConsumo di CPU dal processo {} fino all'istante {:?}: {}%",id(),ora,uso);
+        uso=system.process(Pid::from_u32(pid)).expect("Processo non trovato").cpu_usage();
+        msg=format!("\nConsumo di CPU dal processo {} fino all'istante {:?}: {}%",pid,ora,uso);
         if file.write_all(msg.as_bytes()).is_err(){
             break;}}
     return;}
