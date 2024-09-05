@@ -206,16 +206,16 @@ fn funzione_di_back_up(){
     let numero_file;                                                    // CONTATORE DEI FILE
     let mut numero_cartelle=0;                                               // CONTATORE SOTTO-DIRECTORY
     let (src_clone,dest_clone)=(directory_sorgente.clone(),directory_destinazione.clone());
-    
+
     if read_dir(directory_sorgente.clone()).is_err(){            // VERIFICA SE ESISTE LA DIRECTORY SORGENTE
         println!("Directory '{}' non trovata",directory_sorgente.clone());
-        spawn(move || crea_finestra_errore("\nDirectory sorgente non trovata"));
+        spawn(|| crea_finestra_errore("\nDirectory sorgente non trovata"));
         return;}
     if create_dir(directory_destinazione.clone()).is_err(){       // CREO LA DIRECTORY OBIETTIVO
         println!("Errore nella creazione di '{}'",directory_destinazione.clone());
-        spawn(move || crea_finestra_errore("\nImpossibile creare la directory di destinazione"));
+        spawn(|| crea_finestra_errore("\nImpossibile creare la directory di destinazione"));
         return;}
-    
+
     spawn(|| crea_finestra_successo(src_clone,dest_clone));      // LANCIA LA FINESTRA
 
     if versione==0{
@@ -261,6 +261,7 @@ fn main(){
                 EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_conferma(x,y),             // SE TI MUOVI
                 EventType::ButtonPress(_)=>mouse.attivazione_conferma(),                  // CLICK->ATTIVO (FORSE) IL COMANDO
                 EventType::ButtonRelease(_)=>attesa_comando=mouse.disattivazione_conferma(),  // SE COMPLETI IL - AVVIO IL BACKUP
+                EventType::KeyPress(_)=>attesa_comando=1,                                     // ESCAPE
                 _=>{}}}};
 
     spawn(|| scrivi_ogni_tanto());                                                // MESSAGGI SUL FILE
