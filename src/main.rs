@@ -1,7 +1,7 @@
 /* STATO: 
 --- Back-Up v
 --- Versioni 1 e 0 v
---- Riepilogo v (manca il tempo)
+--- Riepilogo v
 --- Finestra di conferma v
 --- thread separato che stampa sul file v
 --- Comandi v
@@ -17,6 +17,7 @@ use druid::widget::{Flex, Label};
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 use druid::{WidgetExt, WindowDesc, Color, AppLauncher, FontDescriptor, FontFamily};
 use rdev::{listen, Event, EventType};
+use cpu_time::ProcessTime;
 
 const HEIGHT:f64=1080.0;
 const WIDTH:f64=1920.0;
@@ -201,8 +202,9 @@ fn scrivi_ogni_tanto(){                              // SCRIVE MESSAGGI A INTERV
     return;}
 
 fn funzione_di_back_up(){
+    let time=ProcessTime::now();                                         // PARTE IL CRONOMETRO
     let (directory_sorgente,directory_destinazione)=leggi_info();        // LETTURA DELLE DIRECTORY
-    let versione=1;                                          // VERSIONE DELL'OPERAZIONE
+    let versione=0;                                          // VERSIONE DELL'OPERAZIONE
     let dim_totale;                                                     // DIMENSIONE TOTALE DEI FILE SPOSTATI
     let numero_file;                                                    // CONTATORE DEI FILE
     let mut numero_cartelle=0;                                               // CONTATORE SOTTO-DIRECTORY
@@ -223,7 +225,8 @@ fn funzione_di_back_up(){
         (dim_totale,numero_file,numero_cartelle)=copia_totale(directory_sorgente,directory_destinazione.clone());} // COPIA TUTTO
     else{
         (dim_totale,numero_file)=copia_file_specifici(directory_sorgente,directory_destinazione.clone(),"csv");} // SOLO I "csv"
-    crea_riepilogo(directory_destinazione,dim_totale,numero_file,numero_cartelle,12.0);   // CREA IL FILE DI RIEPILOGO
+    
+    crea_riepilogo(directory_destinazione,dim_totale,numero_file,numero_cartelle,time.elapsed().as_secs_f64()); // CREA IL FILE DI RIEPILOGO
     return;}
 
 fn crea_finestra_successo(src:String,dest:String){                         // CREA LA FINESTRA DI CONFERMA
