@@ -3,10 +3,11 @@
 version = 3
 
 [[package]]
-name = "ProgettoReba"
+name = "ProgettoPDS"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "cpu-time",
  "druid",
  "rdev",
  "sysinfo",
@@ -302,6 +303,16 @@ dependencies = [
  "core-graphics 0.22.3",
  "foreign-types",
  "libc",
+]
+
+[[package]]
+name = "cpu-time"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9e393a7668fe1fad3075085b86c781883000b4ede868f43627b34a87c8b7ded"
+dependencies = [
+ "libc",
+ "winapi",
 ]
 
 [[package]]
