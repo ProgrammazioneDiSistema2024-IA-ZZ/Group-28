@@ -79,8 +79,9 @@ impl Mouse{
         return;}
 
     fn attivazione_conferma(&mut self){                               // SI ATTIVA L'ATTESA DEL COMPLETAMENTO DEL COMANDO
-        self.pos_prec_y=self.pos_y;
-        self.is_active=true;                                         // DA ORA POS_PREC_Y E' LA POS DEL MENO
+        if self.pos_x<=self.range_rettangolo{                        // SOLO SE SEI A SX
+            self.pos_prec_y=self.pos_y;
+            self.is_active=true;}                                         // DA ORA POS_PREC_Y E' LA POS DEL MENO
         return;}
 
     fn disattivazione_conferma(&mut self)->i32{                        // AVVIA lA FUNZIONE O SPEGNE TUTTO
@@ -258,7 +259,6 @@ fn main(){
                 EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_rettangolo(x,y),    // SE TI MUOVI
                 EventType::ButtonPress(_)=>mouse.inizio_attesa(),                                 // CLICK->ATTIVO LA LETTURA DEL RETTANGOLO
                 EventType::ButtonRelease(_)=>attesa_comando=mouse.fine_attesa(),                 // SE COMPLETI SI PASSA ALLA FFASE 2
-                EventType::KeyPress(_)=>panic!("Processo interrotto"),                         // ESCAPE
                 _=>{}}}
         else{                               // CASO DEL COMANDO DI CONFERMA
             match event.event_type{
