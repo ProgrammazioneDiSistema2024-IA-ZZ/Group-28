@@ -53,17 +53,17 @@ impl Mouse{
         match self.is_active_vec{
             [true,false,false,false]=>{
                 if x<=self.range_rettangolo && y>=HEIGHT-self.range_rettangolo{     // TOCCA IN BASSO A SX
-                    self.is_active_vec=[true,true,false,false];}
+                    self.is_active_vec[1]=true;}
                 else if x>self.range_rettangolo{                    // SFORA A DX
                     valido=0;}}
             [true,true,false,false]=>{
                 if x>=WIDTH-self.range_rettangolo && y>=HEIGHT-self.range_rettangolo{     // TOCCA IN BASSO A DX
-                    self.is_active_vec=[true,true,true,false];}
+                    self.is_active_vec[2]=true;}
                 else if y<HEIGHT-self.range_rettangolo{         // SFORA
                     valido=0;}}
             [true,true,true,false]=>{
                 if y<=self.range_rettangolo && x>=WIDTH-self.range_rettangolo{         // TOCCA IN ALTO A DX
-                    self.is_active_vec=[true,true,true,true];}
+                    self.is_active_vec[3]=true;}
                 else if x<WIDTH-self.range_rettangolo{           //  SFORA
                     valido=0;}}
             [true,true,true,true]=>{
@@ -123,19 +123,18 @@ fn copia_totale(sorgente:String, destinazione:String)->(u64, i32, i32){
         path_destinazione=format!("{}/{}",destinazione,nome_file);                    // PATH SU CUI SCRIVERE
 
         if file_da_leggere.file_type().unwrap().is_file(){
-            if let Err(err)=copy(path_file.clone(),path_destinazione){        // COPIO IL FILE
-                println!("{:?}",err.kind());}
+            if copy(path_file.clone(),path_destinazione).is_err(){        // COPIO IL FILE
+                panic!("Errore nel trasferimento del file '{}'",nome_file);}
             n_file=n_file+1;
             dim=dim+metadata(path_file).unwrap().len();}
         else{
-            if let Err(err)=create_dir(path_destinazione.clone()){    // CREO LA DIRECTORY
-                println!("{:?}",err.kind());}
-            else{
-                n_cartelle=n_cartelle+1;
-                com=copia_totale(path_file,path_destinazione);           // DISCESA RICORSIVA
-                dim=dim+com.0;
-                n_file=n_file+com.1;
-                n_cartelle=n_cartelle+com.2;}}}                      // RISULTATI
+            if create_dir(path_destinazione.clone()).is_err(){    // CREO LA DIRECTORY
+                panic!("Errore nel trasferimento della directory '{}'",nome_file);}
+            n_cartelle=n_cartelle+1;
+            com=copia_totale(path_file,path_destinazione);           // DISCESA RICORSIVA
+            dim=dim+com.0;
+            n_file=n_file+com.1;
+            n_cartelle=n_cartelle+com.2;}}                      // RISULTATI
     return (dim,n_file,n_cartelle);}
 
 fn copia_file_specifici(sorgente:String,destinazione:String,formato:&str)->(u64,i32){
@@ -159,8 +158,8 @@ fn copia_file_specifici(sorgente:String,destinazione:String,formato:&str)->(u64,
         path_destinazione=format!("{}/{}",destinazione,nome_file);                    // PATH SU CUI SCRIVERE
 
         if file_da_leggere.file_type().unwrap().is_file() && file_da_leggere.path().extension()==Some(formato.as_ref()){
-            if let Err(err)=copy(path_file.clone(),path_destinazione){        // COPIO IL FILE
-                println!("{:?}",err.kind());}
+            if let Err(_)=copy(path_file.clone(),path_destinazione){        // COPIO IL FILE
+                panic!("Errore nel trasferimento del file '{}'",nome_file);}
             n_file=n_file+1;
             dim=dim+metadata(path_file).unwrap().len();}
         else if file_da_leggere.file_type().unwrap().is_dir(){                   // LO METTO COMUNQUE IN ELIF
@@ -171,7 +170,7 @@ fn copia_file_specifici(sorgente:String,destinazione:String,formato:&str)->(u64,
 
 fn leggi_info()->(String,String){
     let file=OpenOptions::new().read(true).open("src/Info.txt").expect("File sorgente non trovato");
-    let mut linee =BufReader::new(file).lines();                  // LEGGO LE DUE LINEE
+    let mut linee=BufReader::new(file).lines();                  // LEGGO LE DUE LINEE
     return (linee.next().unwrap().unwrap(),linee.next().unwrap().unwrap());}
 
 fn crea_riepilogo(src:String,dim:u64,n_file:i32,n_cartelle:i32,tempo:f64){
@@ -182,7 +181,7 @@ fn crea_riepilogo(src:String,dim:u64,n_file:i32,n_cartelle:i32,tempo:f64){
     let path=format!("{}/Riepilogo.txt",src);
     let mut file =OpenOptions::new().create(true).write(true).open(path).expect("Impossibile creare il file");
     if file.write_all(msg.as_bytes()).is_err(){
-        println!("Errore nel riepilogo operazione");}
+        panic!("Errore nel riepilogo operazione");}
     return;}
 
 fn scrivi_ogni_tanto(){                              // SCRIVE MESSAGGI A INTERVALLI REGOLARI
@@ -191,25 +190,25 @@ fn scrivi_ogni_tanto(){                              // SCRIVE MESSAGGI A INTERV
     let mut msg;
     let mut ora: DateTime<Utc>;                                            // PER OTTENERE L'ORA IN FORMATO LEGGIBILE
     let mut uso;
-    let pid=id();
+    let pid=Pid::from_u32(id());
     loop{
         sleep(Duration::from_secs(120));                           // ATTENDI...
         system.refresh_all();                                            // LEGGE I DATI DAL SISTEMA
         ora=SystemTime::now().into();
-        uso=system.process(Pid::from_u32(pid)).expect("Processo non trovato").cpu_usage();
+        uso=system.process(pid).expect("Processo non trovato").cpu_usage();
         msg=format!("\nConsumo di CPU dal processo {} fino all'istante {:?}: {}%",pid,ora,uso);
         if file.write_all(msg.as_bytes()).is_err(){
             break;}}
     return;}
 
 fn funzione_di_back_up(){
-    let time=ProcessTime::now();                                         // PARTE IL CRONOMETRO
     let (directory_sorgente,directory_destinazione)=leggi_info();        // LETTURA DELLE DIRECTORY
     let versione=0;                                          // VERSIONE DELL'OPERAZIONE
     let dim_totale;                                                     // DIMENSIONE TOTALE DEI FILE SPOSTATI
     let numero_file;                                                    // CONTATORE DEI FILE
     let mut numero_cartelle=0;                                               // CONTATORE SOTTO-DIRECTORY
     let (src_clone,dest_clone)=(directory_sorgente.clone(),directory_destinazione.clone());
+    let time=ProcessTime::now();                                         // PARTE IL CRONOMETRO
 
     if read_dir(directory_sorgente.clone()).is_err(){            // VERIFICA SE ESISTE LA DIRECTORY SORGENTE
         println!("Directory '{}' non trovata",directory_sorgente.clone());
@@ -226,7 +225,7 @@ fn funzione_di_back_up(){
         (dim_totale,numero_file,numero_cartelle)=copia_totale(directory_sorgente,directory_destinazione.clone());} // COPIA TUTTO
     else{
         (dim_totale,numero_file)=copia_file_specifici(directory_sorgente,directory_destinazione.clone(),"csv");} // SOLO I "csv"
-    
+
     crea_riepilogo(directory_destinazione,dim_totale,numero_file,numero_cartelle,time.elapsed().as_secs_f64()); // CREA IL FILE DI RIEPILOGO
     return;}
 
@@ -250,7 +249,7 @@ fn crea_finestra_errore(msg: &str){                         // CREA LA FINESTRA 
     return;}
 
 fn main(){
-    let mut mouse =Mouse::new();                                 // RAPPRESENTA IL MOUSE
+    let mut mouse=Mouse::new();                                 // RAPPRESENTA IL MOUSE
     let mut attesa_comando=1;                                 // RAPPRESNTA IL COMANDO ATTESO (1:RETTANGOLO,2:MENO)
 
     let callback_comando=move|event:Event|{
