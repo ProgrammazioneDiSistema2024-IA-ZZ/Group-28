@@ -16,7 +16,7 @@ use chrono::{DateTime,Utc};
 use druid::widget::{Flex, Label};
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 use druid::{WidgetExt, WindowDesc, Color, AppLauncher, FontDescriptor, FontFamily};
-use rdev::{listen, Event, EventType};
+use rdev::{listen, Event, EventType, Key};
 use cpu_time::ProcessTime;
 
 const HEIGHT:f64=1080.0;
@@ -75,7 +75,7 @@ impl Mouse{
         self.pos_y=y;
         if valido==0{
             self.is_active_vec=[false;4];}                 // ERR=>AZZERA TUTTO
-        println!("{}  {}  {:?}",x,y,self.is_active_vec);
+        println!("{:?}",self.is_active_vec);
         return;}
 
     fn attivazione_conferma(&mut self){                               // SI ATTIVA L'ATTESA DEL COMPLETAMENTO DEL COMANDO
@@ -84,11 +84,11 @@ impl Mouse{
             self.is_active=true;}                                         // DA ORA POS_PREC_Y E' LA POS DEL MENO
         return;}
 
-    fn disattivazione_conferma(&mut self)->i32{                        // AVVIA lA FUNZIONE O SPEGNE TUTTO
-        let mut risposta=2;
+    fn disattivazione_conferma(&mut self,versione:i32,formato:Option<&str>)->i32{                        // AVVIA lA FUNZIONE O SPEGNE TUTTO
+        let mut risposta=3;
         if self.pos_y<=self.pos_prec_y+self.range_conferma && self.pos_y>=self.pos_prec_y-self.range_conferma && self.is_active
             && self.pos_x>=WIDTH-self.range_rettangolo{
-            funzione_di_back_up();
+            funzione_di_back_up(versione,formato);
             risposta=1;}
         self.is_active=false;
         return risposta;}                 // RISPOSTA RAPPRESENTA LO STATO IN CUI TORNARE (1: ATTENDO UN RETTANGOLO, 2: CONFERMA MANCATA)
@@ -98,7 +98,7 @@ impl Mouse{
             self.is_active=false;}                       // SOLO IN AVANTI, UNA VOLTA AVVIATO
         self.pos_x=x;
         self.pos_y=y;
-        println!("{}   {}    {}",x,y,self.is_active);
+        println!("{}",self.is_active);
         return;}}
 
 fn copia_totale(sorgente:String, destinazione:String)->(u64, i32, i32){
@@ -173,11 +173,11 @@ fn leggi_info()->(String,String){
     let mut linee=BufReader::new(file).lines();                  // LEGGO LE DUE LINEE
     return (linee.next().unwrap().unwrap(),linee.next().unwrap().unwrap());}
 
-fn crea_riepilogo(src:String,dim:u64,n_file:i32,n_cartelle:i32,tempo:f64){
+fn crea_riepilogo(src:String,dim:u64,n_file:i32,n_cartelle:i32,tempo:f64,operazione:String){
     let ora: DateTime<Utc>=SystemTime::now().into();
-    let msg=format!("Operazione completata il {}.\nInformazioni aggiuntive:\n--Numero file copiati: {}\n--\
+    let msg=format!("Operazione completata il {}.\n\nInformazioni aggiuntive:\n--{}\n--Numero file copiati: {}\n--\
                            Numero cartelle copiate: {}\n--Dimensione totale: {} bytes\n--\
-                           Tempo di CPU: {} secondi",ora,n_file,n_cartelle,dim,tempo);
+                           Tempo di CPU: {} secondi",ora,operazione,n_file,n_cartelle,dim,tempo);
     let path=format!("{}/Riepilogo.txt",src);
     let mut file =OpenOptions::new().create(true).write(true).open(path).expect("Impossibile creare il file");
     if file.write_all(msg.as_bytes()).is_err(){
@@ -201,13 +201,13 @@ fn scrivi_ogni_tanto(){                              // SCRIVE MESSAGGI A INTERV
             break;}}
     return;}
 
-fn funzione_di_back_up(){
+fn funzione_di_back_up(versione:i32,formato:Option<&str>){
     let (directory_sorgente,directory_destinazione)=leggi_info();        // LETTURA DELLE DIRECTORY
-    let versione=0;                                          // VERSIONE DELL'OPERAZIONE
     let dim_totale;                                                     // DIMENSIONE TOTALE DEI FILE SPOSTATI
     let numero_file;                                                    // CONTATORE DEI FILE
     let mut numero_cartelle=0;                                               // CONTATORE SOTTO-DIRECTORY
     let (src_clone,dest_clone)=(directory_sorgente.clone(),directory_destinazione.clone());
+    let msg;                                                                      // COSA SCRIVO COME OPERAZIONE NEL FILE DI RIEPILOGO
     let time=ProcessTime::now();                                         // PARTE IL CRONOMETRO
 
     if read_dir(directory_sorgente.clone()).is_err(){            // VERIFICA SE ESISTE LA DIRECTORY SORGENTE
@@ -222,16 +222,18 @@ fn funzione_di_back_up(){
     spawn(|| crea_finestra_successo(src_clone,dest_clone));      // LANCIA LA FINESTRA
 
     if versione==0{
-        (dim_totale,numero_file,numero_cartelle)=copia_totale(directory_sorgente,directory_destinazione.clone());} // COPIA TUTTO
+        (dim_totale,numero_file,numero_cartelle)=copia_totale(directory_sorgente,directory_destinazione.clone()); // COPIA TUTTO
+        msg="Descrizione: copia di tutti i file/directory".to_string();}
     else{
-        (dim_totale,numero_file)=copia_file_specifici(directory_sorgente,directory_destinazione.clone(),"csv");} // SOLO I "csv"
-
-    crea_riepilogo(directory_destinazione,dim_totale,numero_file,numero_cartelle,time.elapsed().as_secs_f64()); // CREA IL FILE DI RIEPILOGO
+        (dim_totale,numero_file)=copia_file_specifici(directory_sorgente,directory_destinazione.clone(),formato.unwrap()); // SOLO I RICHIESTI
+        msg=format!("Descrizione: copia dei soli file con estensione '{}'",formato.unwrap());}
+        
+    crea_riepilogo(directory_destinazione,dim_totale,numero_file,numero_cartelle,time.elapsed().as_secs_f64(),msg); // CREA IL FILE DI RIEPILOGO
     return;}
 
 fn crea_finestra_successo(src:String,dest:String){                         // CREA LA FINESTRA DI CONFERMA
     let ora:DateTime<Utc>=SystemTime::now().into();
-    let text =format!("\n\nBack-up in corso...\n\n\nSorgente: '{}'\n\nDestinazione: '{}'\n\n\nOra: {}",src,dest,ora);// TESTO DA SCRIVERE
+    let text=format!("\n\nBack-up in corso...\n\n\nSorgente: '{}'\n\nDestinazione: '{}'\n\n\nOra: {}",src,dest,ora);// TESTO DA SCRIVERE
     let label=Label::new(text).with_text_color(Color::WHITE);           // BLOCCO INTERNO CON IL TESTO
     let flex=Flex::column().with_child(label).background(Color::GREEN);        // FLEX DI ALLINEAMENTO ORIZZONTALE
     let window=WindowDesc::new(flex).window_size((600.0,300.0));    // CREO LA FINESTRA DI CONFERMA
@@ -251,6 +253,8 @@ fn crea_finestra_errore(msg: &str){                         // CREA LA FINESTRA 
 fn main(){
     let mut mouse=Mouse::new();                                 // RAPPRESENTA IL MOUSE
     let mut attesa_comando=1;                                 // RAPPRESNTA IL COMANDO ATTESO (1:RETTANGOLO,2:MENO)
+    let mut versione=0;
+    let mut formato=None;                                            // VARIABILI PER LA FUNZIONE DI BACK UP
 
     let callback_comando=move|event:Event|{
         if attesa_comando==1{            // CASO DEL COMANDO DEL RETTANGOLO
@@ -259,16 +263,27 @@ fn main(){
                 EventType::ButtonPress(_)=>mouse.inizio_attesa(),                                 // CLICK->ATTIVO LA LETTURA DEL RETTANGOLO
                 EventType::ButtonRelease(_)=>attesa_comando=mouse.fine_attesa(),                 // SE COMPLETI SI PASSA ALLA FFASE 2
                 _=>{}}}
-        else{                               // CASO DEL COMANDO DI CONFERMA
+        else if attesa_comando==2{                               // CASO DEL COMANDO DA TASTIERA
+            if let EventType::KeyPress(pulsante)=event.event_type{    
+                    match pulsante{                                                       // DECIDI QUALE VERSIONE
+                        Key::KeyA=>(versione,formato,attesa_comando)=(0,None,3),          // SE 'a'/'A' -> TOTALE
+                        Key::KeyB=>(versione,formato,attesa_comando)=(1,Some("csv"),3),   // SE 'b'/'B' -> SOLO I .csv
+                        Key::KeyC=>(versione,formato,attesa_comando)=(1,Some("py"),3),    // SE 'c'/'C' -> SOLO I .py
+                        Key::KeyD=>(versione,formato,attesa_comando)=(1,Some("txt"),3),   // SE 'd'/'D' -> SOLO I .txt
+                        Key::KeyE=>(versione,formato,attesa_comando)=(1,Some("java"),3),  // SE 'e'/'E' -> SOLO I .java
+                        Key::KeyF=>(versione,formato,attesa_comando)=(1,Some("npy"),3),   // SE 'f'/'F' -> SOLO I .npy
+                        Key::KeyG=>(versione,formato,attesa_comando)=(1,Some("docx"),3),  // SE 'g'/'G' -> SOLO I .docx
+                        _=>attesa_comando=1}}}
+        else{
             match event.event_type{
                 EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_conferma(x,y),             // SE TI MUOVI
                 EventType::ButtonPress(_)=>mouse.attivazione_conferma(),                  // CLICK->ATTIVO (FORSE) IL COMANDO
-                EventType::ButtonRelease(_)=>attesa_comando=mouse.disattivazione_conferma(),  // SE COMPLETI IL - AVVIO IL BACKUP
+                EventType::ButtonRelease(_)=>attesa_comando=mouse.disattivazione_conferma(versione,formato),  // SE COMPLETI IL - AVVIO IL BACKUP
                 EventType::KeyPress(_)=>attesa_comando=1,                                     // ESCAPE
                 _=>{}}}};
 
     spawn(|| scrivi_ogni_tanto());                                                // MESSAGGI SUL FILE
 
-    if let Err(msg)=listen(callback_comando){                          // ATTESA
-        println!("Errore: {:?}",msg);}
+    if listen(callback_comando).is_err(){                          // ATTESA
+        println!("Errore, impossibile inizializzzare l'operazione");}
     return;}
