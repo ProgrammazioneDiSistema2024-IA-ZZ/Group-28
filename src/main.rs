@@ -19,61 +19,61 @@ use druid::{WidgetExt, WindowDesc, Color, AppLauncher, FontDescriptor, FontFamil
 use rdev::{listen, Event, EventType, Key};
 use cpu_time::ProcessTime;
 
-const HEIGHT:f64=1080.0;
-const WIDTH:f64=1920.0;
+const HEIGHT:i32=1080;
+const WIDTH:i32=1920;
 
 struct Mouse{                // RAPPRESENTA IL MOUSE DURANTE IL COMANDO
-    pos_x:f64,                     // COORDINATE ATTUALI
-    pos_y:f64,
-    pos_prec_y: f64,            // USATO PER IL MENO DI CONFERMA
+    n_fase: usize,               // IN CHE FASE SIAMO (1:ATTESA RETTANGOLO, 2:ATTESA COMANDO, 3:ATTESA CONFERMA)
+    pos_x:i32,                     // COORDINATE ATTUALI
+    pos_y:i32,
+    pos_prec_y:i32,            // USATO PER IL MENO DI CONFERMA
     is_active_vec:[bool;4],        // ANGOLI TOCCATI O NO
     is_active:bool,               // COMANDO CONFERMA AVVATO?
-    range_rettangolo:f64,          // RANGE PER RETTANGOLO
-    range_conferma: f64}                     // RANGE DI ACCETTABILITA'
+    range_rettangolo:i32,          // RANGE PER RETTANGOLO
+    range_conferma:i32}                     // RANGE DI ACCETTABILITA'
 
 impl Mouse{
 
     fn new()->Self{
-        return Mouse{pos_x:0.0,pos_y:0.0,pos_prec_y:0.0,is_active_vec:[false;4],is_active:false,range_conferma:100.0,range_rettangolo:20.0};}
+        return Mouse{n_fase:1,pos_x:0,pos_y:0,pos_prec_y:0,is_active_vec:[false;4],is_active:false,range_conferma:100,range_rettangolo:20};}
 
     fn inizio_attesa(&mut self){                 // SE PREMI E SEI CIRCA LI' ATTIVO IL RETTANGOLO
         if self.pos_x<=self.range_rettangolo && self.pos_y<=self.range_rettangolo{
             self.is_active_vec[0]=true;}
         return;}
 
-    fn fine_attesa(&mut self)->i32{                     // SE LASCI E SEI CIRCA LI' PASSO ALLA SECONDA ATTESA
-        let mut val=1;
+    fn fine_attesa(&mut self){                     // SE LASCI E SEI CIRCA LI' PASSO ALLA SECONDA ATTESA
         if self.pos_x<=self.range_rettangolo && self.pos_y<=self.range_rettangolo && self.is_active_vec==[true,true,true,true]{
-            val=2;}
+            self.n_fase=2;}
         self.is_active_vec=[false;4];
-        return val;}
+        return;}
 
-    fn cambia_posizione_per_rettangolo(&mut self,x:f64,y:f64){       // SI MUOVE
-        let mut valido=1;
+    fn cambia_posizione_per_rettangolo(&mut self,x:i32,y:i32){       // SI MUOVE
+        let mut valido=true;
         match self.is_active_vec{
             [true,false,false,false]=>{
                 if x<=self.range_rettangolo && y>=HEIGHT-self.range_rettangolo{     // TOCCA IN BASSO A SX
                     self.is_active_vec[1]=true;}
                 else if x>self.range_rettangolo{                    // SFORA A DX
-                    valido=0;}}
+                    valido=false;}}
             [true,true,false,false]=>{
                 if x>=WIDTH-self.range_rettangolo && y>=HEIGHT-self.range_rettangolo{     // TOCCA IN BASSO A DX
                     self.is_active_vec[2]=true;}
                 else if y<HEIGHT-self.range_rettangolo{         // SFORA
-                    valido=0;}}
+                    valido=false;}}
             [true,true,true,false]=>{
                 if y<=self.range_rettangolo && x>=WIDTH-self.range_rettangolo{         // TOCCA IN ALTO A DX
                     self.is_active_vec[3]=true;}
                 else if x<WIDTH-self.range_rettangolo{           //  SFORA
-                    valido=0;}}
+                    valido=false;}}
             [true,true,true,true]=>{
                 if y>self.range_rettangolo{             // SFORA
-                    valido=0;}}
+                    valido=false;}}
             _=>{}}
 
         self.pos_x=x;
         self.pos_y=y;
-        if valido==0{
+        if valido==false{
             self.is_active_vec=[false;4];}                 // ERR=>AZZERA TUTTO
         println!("{:?}",self.is_active_vec);
         return;}
@@ -84,16 +84,15 @@ impl Mouse{
             self.is_active=true;}                                         // DA ORA POS_PREC_Y E' LA POS DEL MENO
         return;}
 
-    fn disattivazione_conferma(&mut self,versione:i32,formato:Option<&str>)->i32{                        // AVVIA lA FUNZIONE O SPEGNE TUTTO
-        let mut risposta=3;
+    fn disattivazione_conferma(&mut self,versione:i32,formato:Option<&str>){                        // AVVIA lA FUNZIONE O SPEGNE TUTTO
         if self.pos_y<=self.pos_prec_y+self.range_conferma && self.pos_y>=self.pos_prec_y-self.range_conferma && self.is_active
             && self.pos_x>=WIDTH-self.range_rettangolo{
             funzione_di_back_up(versione,formato);
-            risposta=1;}
+            self.n_fase=1;}
         self.is_active=false;
-        return risposta;}                 // RISPOSTA RAPPRESENTA LO STATO IN CUI TORNARE (1: ATTENDO UN RETTANGOLO, 2: CONFERMA MANCATA)
+        return;}                 // RISPOSTA RAPPRESENTA LO STATO IN CUI TORNARE (1: ATTENDO UN RETTANGOLO, 2: CONFERMA MANCATA)
 
-    fn cambia_posizione_per_conferma(&mut self,x:f64,y:f64){               // IL MOUSE SI SPOSTA
+    fn cambia_posizione_per_conferma(&mut self,x:i32,y:i32){               // IL MOUSE SI SPOSTA
         if self.pos_y>self.pos_prec_y+self.range_conferma || self.pos_y<self.pos_prec_y-self.range_conferma{
             self.is_active=false;}                       // SOLO IN AVANTI, UNA VOLTA AVVIATO
         self.pos_x=x;
@@ -211,11 +210,9 @@ fn funzione_di_back_up(versione:i32,formato:Option<&str>){
     let time=ProcessTime::now();                                         // PARTE IL CRONOMETRO
 
     if read_dir(directory_sorgente.clone()).is_err(){            // VERIFICA SE ESISTE LA DIRECTORY SORGENTE
-        println!("Directory '{}' non trovata",directory_sorgente.clone());
         spawn(|| crea_finestra_errore("\nDirectory sorgente non trovata"));
         return;}
     if create_dir(directory_destinazione.clone()).is_err(){       // CREO LA DIRECTORY OBIETTIVO
-        println!("Errore nella creazione di '{}'",directory_destinazione.clone());
         spawn(|| crea_finestra_errore("\nImpossibile creare la directory di destinazione"));
         return;}
 
@@ -252,34 +249,33 @@ fn crea_finestra_errore(msg: &str){                         // CREA LA FINESTRA 
 
 fn main(){
     let mut mouse=Mouse::new();                                 // RAPPRESENTA IL MOUSE
-    let mut attesa_comando=1;                                 // RAPPRESNTA IL COMANDO ATTESO (1:RETTANGOLO,2:MENO)
     let mut versione=0;
     let mut formato=None;                                            // VARIABILI PER LA FUNZIONE DI BACK UP
 
     let callback_comando=move|event:Event|{
-        if attesa_comando==1{            // CASO DEL COMANDO DEL RETTANGOLO
+        if mouse.n_fase==1{            // CASO DEL COMANDO DEL RETTANGOLO
             match event.event_type{
-                EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_rettangolo(x,y),    // SE TI MUOVI
+                EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_rettangolo(x as i32,y as i32),    // SE TI MUOVI
                 EventType::ButtonPress(_)=>mouse.inizio_attesa(),                                 // CLICK->ATTIVO LA LETTURA DEL RETTANGOLO
-                EventType::ButtonRelease(_)=>attesa_comando=mouse.fine_attesa(),                 // SE COMPLETI SI PASSA ALLA FFASE 2
+                EventType::ButtonRelease(_)=>mouse.fine_attesa(),                 // SE COMPLETI SI PASSA ALLA FFASE 2
                 _=>{}}}
-        else if attesa_comando==2{                               // CASO DEL COMANDO DA TASTIERA
+        else if mouse.n_fase==2{                               // CASO DEL COMANDO DA TASTIERA
             if let EventType::KeyPress(pulsante)=event.event_type{    
                     match pulsante{                                                       // DECIDI QUALE VERSIONE
-                        Key::KeyA=>(versione,formato,attesa_comando)=(0,None,3),          // SE 'a'/'A' -> TOTALE
-                        Key::KeyB=>(versione,formato,attesa_comando)=(1,Some("csv"),3),   // SE 'b'/'B' -> SOLO I .csv
-                        Key::KeyC=>(versione,formato,attesa_comando)=(1,Some("py"),3),    // SE 'c'/'C' -> SOLO I .py
-                        Key::KeyD=>(versione,formato,attesa_comando)=(1,Some("txt"),3),   // SE 'd'/'D' -> SOLO I .txt
-                        Key::KeyE=>(versione,formato,attesa_comando)=(1,Some("java"),3),  // SE 'e'/'E' -> SOLO I .java
-                        Key::KeyF=>(versione,formato,attesa_comando)=(1,Some("npy"),3),   // SE 'f'/'F' -> SOLO I .npy
-                        Key::KeyG=>(versione,formato,attesa_comando)=(1,Some("docx"),3),  // SE 'g'/'G' -> SOLO I .docx
-                        _=>attesa_comando=1}}}
+                        Key::KeyA=>(versione,formato,mouse.n_fase)=(0,None,3),          // SE 'a'/'A' -> TOTALE
+                        Key::KeyB=>(versione,formato,mouse.n_fase)=(1,Some("csv"),3),   // SE 'b'/'B' -> SOLO I .csv
+                        Key::KeyC=>(versione,formato,mouse.n_fase)=(1,Some("py"),3),    // SE 'c'/'C' -> SOLO I .py
+                        Key::KeyD=>(versione,formato,mouse.n_fase)=(1,Some("txt"),3),   // SE 'd'/'D' -> SOLO I .txt
+                        Key::KeyE=>(versione,formato,mouse.n_fase)=(1,Some("java"),3),  // SE 'e'/'E' -> SOLO I .java
+                        Key::KeyF=>(versione,formato,mouse.n_fase)=(1,Some("npy"),3),   // SE 'f'/'F' -> SOLO I .npy
+                        Key::KeyG=>(versione,formato,mouse.n_fase)=(1,Some("docx"),3),  // SE 'g'/'G' -> SOLO I .docx
+                        _=>mouse.n_fase=1}}}
         else{
             match event.event_type{
-                EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_conferma(x,y),             // SE TI MUOVI
+                EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_conferma(x as i32,y as i32),             // SE TI MUOVI
                 EventType::ButtonPress(_)=>mouse.attivazione_conferma(),                  // CLICK->ATTIVO (FORSE) IL COMANDO
-                EventType::ButtonRelease(_)=>attesa_comando=mouse.disattivazione_conferma(versione,formato),  // SE COMPLETI IL - AVVIO IL BACKUP
-                EventType::KeyPress(_)=>attesa_comando=1,                                     // ESCAPE
+                EventType::ButtonRelease(_)=>mouse.disattivazione_conferma(versione,formato),  // SE COMPLETI IL - AVVIO IL BACKUP
+                EventType::KeyPress(_)=>mouse.n_fase=1,                                     // ESCAPE
                 _=>{}}}};
 
     spawn(|| scrivi_ogni_tanto());                                                // MESSAGGI SUL FILE
