@@ -28,16 +28,16 @@ struct Mouse{                // RAPPRESENTA IL MOUSE DURANTE IL COMANDO
     pos_y:i32,
     pos_prec_y:i32,            // USATO PER IL MENO DI CONFERMA
     is_active_vec:[bool;4],        // ANGOLI TOCCATI O NO
-    is_active:bool,               // COMANDO CONFERMA AVVATO?
+    is_active:bool,               // COMANDO CONFERMA AVVIATO?
     range_rettangolo:i32,          // RANGE PER RETTANGOLO
-    range_conferma:i32}                     // RANGE DI ACCETTABILITA'
+    range_conferma:i32}                     // RANGE DELLA CONFERMA
 
 impl Mouse{
 
     fn new()->Self{
         return Mouse{n_fase:1,pos_x:0,pos_y:0,pos_prec_y:0,is_active_vec:[false;4],is_active:false,range_conferma:100,range_rettangolo:20};}
 
-    fn inizio_attesa(&mut self){                 // SE PREMI E SEI CIRCA LI' ATTIVO IL RETTANGOLO
+    fn inizio_attesa(&mut self){                 // SE PREMI E SEI CIRCA LI' ATTIVO IL PRIMO ANGOLO
         if self.pos_x<=self.range_rettangolo && self.pos_y<=self.range_rettangolo{
             self.is_active_vec[0]=true;}
         return;}
@@ -45,7 +45,7 @@ impl Mouse{
     fn fine_attesa(&mut self){                     // SE LASCI E SEI CIRCA LI' PASSO ALLA SECONDA ATTESA
         if self.pos_x<=self.range_rettangolo && self.pos_y<=self.range_rettangolo && self.is_active_vec==[true,true,true,true]{
             self.n_fase=2;}
-        self.is_active_vec=[false;4];
+        self.is_active_vec=[false;4];         // AZZERO TUTTO
         return;}
 
     fn cambia_posizione_per_rettangolo(&mut self,x:i32,y:i32){       // SI MUOVE
@@ -54,7 +54,7 @@ impl Mouse{
             [true,false,false,false]=>{
                 if x<=self.range_rettangolo && y>=HEIGHT-self.range_rettangolo{     // TOCCA IN BASSO A SX
                     self.is_active_vec[1]=true;}
-                else if x>self.range_rettangolo{                    // SFORA A DX
+                else if x>self.range_rettangolo{                    // SFORA
                     valido=false;}}
             [true,true,false,false]=>{
                 if x>=WIDTH-self.range_rettangolo && y>=HEIGHT-self.range_rettangolo{     // TOCCA IN BASSO A DX
@@ -78,23 +78,22 @@ impl Mouse{
         println!("{:?}",self.is_active_vec);
         return;}
 
-    fn attivazione_conferma(&mut self){                               // SI ATTIVA L'ATTESA DEL COMPLETAMENTO DEL COMANDO
-        if self.pos_x<=self.range_rettangolo{                        // SOLO SE SEI A SX
+    fn attivazione_conferma(&mut self){                // SI ATTIVA L'ATTESA DEL COMPLETAMENTO DEL COMANDO
+        if self.pos_x<=self.range_rettangolo{          // SOLO SE SEI A SX
             self.pos_prec_y=self.pos_y;
-            self.is_active=true;}                                         // DA ORA POS_PREC_Y E' LA POS DEL MENO
+            self.is_active=true;}                // DA ORA POS_PREC_Y E' L'ALTEZZA DEL MENO
         return;}
 
-    fn disattivazione_conferma(&mut self,versione:i32,formato:Option<&str>){                        // AVVIA lA FUNZIONE O SPEGNE TUTTO
-        if self.pos_y<=self.pos_prec_y+self.range_conferma && self.pos_y>=self.pos_prec_y-self.range_conferma && self.is_active
-            && self.pos_x>=WIDTH-self.range_rettangolo{
-            funzione_di_back_up(versione,formato);
+    fn disattivazione_conferma(&mut self,versione:i32,formato:Option<&str>){   // AVVIA lA FUNZIONE O SPEGNE TUTTO
+        if self.is_active && self.pos_x>=WIDTH-self.range_rettangolo{
+            funzione_di_back_up(versione,formato);         // CONTROLLO DELL'ALTEZZA NEL MOVIMENTO
             self.n_fase=1;}
-        self.is_active=false;
-        return;}                 // RISPOSTA RAPPRESENTA LO STATO IN CUI TORNARE (1: ATTENDO UN RETTANGOLO, 2: CONFERMA MANCATA)
+        self.is_active=false;          // AZZERA TUTTO
+        return;}
 
     fn cambia_posizione_per_conferma(&mut self,x:i32,y:i32){               // IL MOUSE SI SPOSTA
         if self.pos_y>self.pos_prec_y+self.range_conferma || self.pos_y<self.pos_prec_y-self.range_conferma{
-            self.is_active=false;}                       // SOLO IN AVANTI, UNA VOLTA AVVIATO
+            self.is_active=false;}                       // SE SFORI SPENGO TUTTO
         self.pos_x=x;
         self.pos_y=y;
         println!("{}",self.is_active);
@@ -173,14 +172,14 @@ fn leggi_info()->(String,String){
     return (linee.next().unwrap().unwrap(),linee.next().unwrap().unwrap());}
 
 fn crea_riepilogo(src:String,dim:u64,n_file:i32,n_cartelle:i32,tempo:f64,operazione:String){
-    let ora: DateTime<Utc>=SystemTime::now().into();
+    let ora: DateTime<Utc>=SystemTime::now().into();                    // LEGGO 'ORA
     let msg=format!("Operazione completata il {}.\n\nInformazioni aggiuntive:\n--{}\n--Numero file copiati: {}\n--\
                            Numero cartelle copiate: {}\n--Dimensione totale: {} bytes\n--\
-                           Tempo di CPU: {} secondi",ora,operazione,n_file,n_cartelle,dim,tempo);
-    let path=format!("{}/Riepilogo.txt",src);
+                           Tempo di CPU: {} secondi",ora,operazione,n_file,n_cartelle,dim,tempo);    // MSG
+    let path=format!("{}/Riepilogo.txt",src);                // CREO IL PATH E IL FILE
     let mut file =OpenOptions::new().create(true).write(true).open(path).expect("Impossibile creare il file");
     if file.write_all(msg.as_bytes()).is_err(){
-        panic!("Errore nel riepilogo operazione");}
+        panic!("Errore nel riepilogo operazione");}               // ERRORE DI SCRITTURA
     return;}
 
 fn scrivi_ogni_tanto(){                              // SCRIVE MESSAGGI A INTERVALLI REGOLARI
@@ -194,9 +193,9 @@ fn scrivi_ogni_tanto(){                              // SCRIVE MESSAGGI A INTERV
         sleep(Duration::from_secs(120));                           // ATTENDI...
         system.refresh_all();                                            // LEGGE I DATI DAL SISTEMA
         ora=SystemTime::now().into();
-        uso=system.process(pid).expect("Processo non trovato").cpu_usage();
+        uso=system.process(pid).expect("Processo non trovato").cpu_usage();        // PRENDO LE INFORMAZIONI
         msg=format!("\nConsumo di CPU dal processo {} fino all'istante {:?}: {}%",pid,ora,uso);
-        if file.write_all(msg.as_bytes()).is_err(){
+        if file.write_all(msg.as_bytes()).is_err(){                // ERRORE DI SCRITTURA
             break;}}
     return;}
 
@@ -206,7 +205,7 @@ fn funzione_di_back_up(versione:i32,formato:Option<&str>){
     let numero_file;                                                    // CONTATORE DEI FILE
     let mut numero_cartelle=0;                                               // CONTATORE SOTTO-DIRECTORY
     let (src_clone,dest_clone)=(directory_sorgente.clone(),directory_destinazione.clone());
-    let msg;                                                                      // COSA SCRIVO COME OPERAZIONE NEL FILE DI RIEPILOGO
+    let msg;                                                 // COSA SCRIVO COME OPERAZIONE NEL FILE DI RIEPILOGO
     let time=ProcessTime::now();                                         // PARTE IL CRONOMETRO
 
     if read_dir(directory_sorgente.clone()).is_err(){            // VERIFICA SE ESISTE LA DIRECTORY SORGENTE
@@ -260,16 +259,23 @@ fn main(){
                 EventType::ButtonRelease(_)=>mouse.fine_attesa(),                 // SE COMPLETI SI PASSA ALLA FFASE 2
                 _=>{}}}
         else if mouse.n_fase==2{                               // CASO DEL COMANDO DA TASTIERA
-            if let EventType::KeyPress(pulsante)=event.event_type{    
-                    match pulsante{                                                       // DECIDI QUALE VERSIONE
-                        Key::KeyA=>(versione,formato,mouse.n_fase)=(0,None,3),          // SE 'a'/'A' -> TOTALE
-                        Key::KeyB=>(versione,formato,mouse.n_fase)=(1,Some("csv"),3),   // SE 'b'/'B' -> SOLO I .csv
-                        Key::KeyC=>(versione,formato,mouse.n_fase)=(1,Some("py"),3),    // SE 'c'/'C' -> SOLO I .py
-                        Key::KeyD=>(versione,formato,mouse.n_fase)=(1,Some("txt"),3),   // SE 'd'/'D' -> SOLO I .txt
-                        Key::KeyE=>(versione,formato,mouse.n_fase)=(1,Some("java"),3),  // SE 'e'/'E' -> SOLO I .java
-                        Key::KeyF=>(versione,formato,mouse.n_fase)=(1,Some("npy"),3),   // SE 'f'/'F' -> SOLO I .npy
-                        Key::KeyG=>(versione,formato,mouse.n_fase)=(1,Some("docx"),3),  // SE 'g'/'G' -> SOLO I .docx
-                        _=>mouse.n_fase=1}}}
+            if let EventType::KeyPress(pulsante)=event.event_type{ 
+                mouse.n_fase=3;
+                match pulsante{                                                       // DECIDI QUALE VERSIONE
+                    Key::KeyA=>(versione,formato)=(0,None),          // SE 'a'/'A' -> TOTALE
+                    Key::KeyB=>(versione,formato)=(1,Some("csv")),   // SE 'b'/'B' -> SOLO I .csv
+                    Key::KeyC=>(versione,formato)=(1,Some("py")),    // SE 'c'/'C' -> SOLO I .py
+                    Key::KeyD=>(versione,formato)=(1,Some("txt")),   // SE 'd'/'D' -> SOLO I .txt
+                    Key::KeyE=>(versione,formato)=(1,Some("java")),  // SE 'e'/'E' -> SOLO I .java
+                    Key::KeyF=>(versione,formato)=(1,Some("npy")),   // SE 'f'/'F' -> SOLO I .npy
+                    Key::KeyG=>(versione,formato)=(1,Some("docx")),  // SE 'g'/'G' -> SOLO I .docx
+                    Key::KeyH=>(versione,formato)=(1,Some("css")),   // SE 'f'/'F' -> SOLO I .css
+                    Key::KeyI=>(versione,formato)=(1,Some("js")),    // SE 'g'/'G' -> SOLO I .js
+                    Key::KeyJ=>(versione,formato)=(1,Some("html")),  // SE 'f'/'F' -> SOLO I .html
+                    Key::KeyK=>(versione,formato)=(1,Some("mp3")),   // SE 'g'/'G' -> SOLO I .mp3
+                    Key::KeyL=>(versione,formato)=(1,Some("jpg")),   // SE 'f'/'F' -> SOLO I .jpg
+                    Key::KeyM=>(versione,formato)=(1,Some("png")),   // SE 'g'/'G' -> SOLO I .png
+                    _=>mouse.n_fase=1}}}
         else{
             match event.event_type{
                 EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_conferma(x as i32,y as i32),             // SE TI MUOVI
