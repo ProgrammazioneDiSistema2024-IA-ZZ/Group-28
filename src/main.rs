@@ -84,9 +84,9 @@ impl Mouse{
             self.is_active=true;}                // DA ORA POS_PREC_Y E' L'ALTEZZA DEL MENO
         return;}
 
-    fn disattivazione_conferma(&mut self,versione:i32,formato:Option<&str>){   // AVVIA lA FUNZIONE O SPEGNE TUTTO
+    fn disattivazione_conferma(&mut self,formato:Option<&str>){   // AVVIA lA FUNZIONE O SPEGNE TUTTO
         if self.is_active && self.pos_x>=WIDTH-self.range_rettangolo{
-            funzione_di_back_up(versione,formato);         // CONTROLLO DELL'ALTEZZA NEL MOVIMENTO
+            funzione_di_back_up(formato);         // CONTROLLO DELL'ALTEZZA NEL MOVIMENTO
             self.n_fase=1;}
         self.is_active=false;          // AZZERA TUTTO
         return;}
@@ -199,7 +199,7 @@ fn scrivi_ogni_tanto(){                              // SCRIVE MESSAGGI A INTERV
             break;}}
     return;}
 
-fn funzione_di_back_up(versione:i32,formato:Option<&str>){
+fn funzione_di_back_up(formato:Option<&str>){
     let (directory_sorgente,directory_destinazione)=leggi_info();        // LETTURA DELLE DIRECTORY
     let dim_totale;                                                     // DIMENSIONE TOTALE DEI FILE SPOSTATI
     let numero_file;                                                    // CONTATORE DEI FILE
@@ -217,7 +217,7 @@ fn funzione_di_back_up(versione:i32,formato:Option<&str>){
 
     spawn(|| crea_finestra_successo(src_clone,dest_clone));      // LANCIA LA FINESTRA
 
-    if versione==0{
+    if formato==None{
         (dim_totale,numero_file,numero_cartelle)=copia_totale(directory_sorgente,directory_destinazione.clone()); // COPIA TUTTO
         msg="Descrizione: copia di tutti i file/directory".to_string();}
     else{
@@ -248,7 +248,6 @@ fn crea_finestra_errore(msg: &str){                         // CREA LA FINESTRA 
 
 fn main(){
     let mut mouse=Mouse::new();                                 // RAPPRESENTA IL MOUSE
-    let mut versione=0;
     let mut formato=None;                                            // VARIABILI PER LA FUNZIONE DI BACK UP
 
     let callback_comando=move|event:Event|{
@@ -262,25 +261,25 @@ fn main(){
             if let EventType::KeyPress(pulsante)=event.event_type{ 
                 mouse.n_fase=3;
                 match pulsante{                                                       // DECIDI QUALE VERSIONE
-                    Key::KeyA=>(versione,formato)=(0,None),          // SE 'a'/'A' -> TOTALE
-                    Key::KeyB=>(versione,formato)=(1,Some("csv")),   // SE 'b'/'B' -> SOLO I .csv
-                    Key::KeyC=>(versione,formato)=(1,Some("py")),    // SE 'c'/'C' -> SOLO I .py
-                    Key::KeyD=>(versione,formato)=(1,Some("txt")),   // SE 'd'/'D' -> SOLO I .txt
-                    Key::KeyE=>(versione,formato)=(1,Some("java")),  // SE 'e'/'E' -> SOLO I .java
-                    Key::KeyF=>(versione,formato)=(1,Some("npy")),   // SE 'f'/'F' -> SOLO I .npy
-                    Key::KeyG=>(versione,formato)=(1,Some("docx")),  // SE 'g'/'G' -> SOLO I .docx
-                    Key::KeyH=>(versione,formato)=(1,Some("css")),   // SE 'f'/'F' -> SOLO I .css
-                    Key::KeyI=>(versione,formato)=(1,Some("js")),    // SE 'g'/'G' -> SOLO I .js
-                    Key::KeyJ=>(versione,formato)=(1,Some("html")),  // SE 'f'/'F' -> SOLO I .html
-                    Key::KeyK=>(versione,formato)=(1,Some("mp3")),   // SE 'g'/'G' -> SOLO I .mp3
-                    Key::KeyL=>(versione,formato)=(1,Some("jpg")),   // SE 'f'/'F' -> SOLO I .jpg
-                    Key::KeyM=>(versione,formato)=(1,Some("png")),   // SE 'g'/'G' -> SOLO I .png
+                    Key::KeyA=>formato=None,          // SE 'a'/'A' -> TOTALE
+                    Key::KeyB=>formato=Some("csv"),   // SE 'b'/'B' -> SOLO I .csv
+                    Key::KeyC=>formato=Some("py"),    // SE 'c'/'C' -> SOLO I .py
+                    Key::KeyD=>formato=Some("txt"),   // SE 'd'/'D' -> SOLO I .txt
+                    Key::KeyE=>formato=Some("java"),  // SE 'e'/'E' -> SOLO I .java
+                    Key::KeyF=>formato=Some("npy"),   // SE 'f'/'F' -> SOLO I .npy
+                    Key::KeyG=>formato=Some("docx"),  // SE 'g'/'G' -> SOLO I .docx
+                    Key::KeyH=>formato=Some("css"),   // SE 'f'/'F' -> SOLO I .css
+                    Key::KeyI=>formato=Some("js"),    // SE 'g'/'G' -> SOLO I .js
+                    Key::KeyJ=>formato=Some("html"),  // SE 'f'/'F' -> SOLO I .html
+                    Key::KeyK=>formato=Some("mp3"),   // SE 'g'/'G' -> SOLO I .mp3
+                    Key::KeyL=>formato=Some("jpg"),   // SE 'f'/'F' -> SOLO I .jpg
+                    Key::KeyM=>formato=Some("png"),   // SE 'g'/'G' -> SOLO I .png
                     _=>mouse.n_fase=1}}}
         else{
             match event.event_type{
                 EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_conferma(x as i32,y as i32),             // SE TI MUOVI
                 EventType::ButtonPress(_)=>mouse.attivazione_conferma(),                  // CLICK->ATTIVO (FORSE) IL COMANDO
-                EventType::ButtonRelease(_)=>mouse.disattivazione_conferma(versione,formato),  // SE COMPLETI IL - AVVIO IL BACKUP
+                EventType::ButtonRelease(_)=>mouse.disattivazione_conferma(formato),  // SE COMPLETI IL - AVVIO IL BACKUP
                 EventType::KeyPress(_)=>mouse.n_fase=1,                                     // ESCAPE
                 _=>{}}}};
 

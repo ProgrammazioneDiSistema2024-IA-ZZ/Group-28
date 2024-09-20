@@ -5,7 +5,7 @@
 - [Descrizione e scopo](#descrizione-e-scopo)
 - [Preparazione](#preparazione)
 - [Comando iniziale](#comando-iniziale)
-- [Definizione versione e eventuale formato](#definizione-versione-e-eventuale-formato)
+- [Definizione eventuale formato](#definizione-eventuale-formato)
 - [Comando di conferma](#comando-di-conferma)
 - [Conclusione operazione](#conclusione-operazione)
 
@@ -30,7 +30,7 @@ Per questo comando bisogna:
 - Mantenendo il pulsante cliccato, raggiungere uno ad uno tutti gli angoli dello schermo in senso antiorario, mantenendosi il più possibile sul bordo dello schermo (accettabilità entro 20 pixel dal bordo);  
 - Una volta raggiunto nuovamente l'angolo iniziale rilasciare il pulsante, sempre mantenendosi nel range sopra indicato (concludendo così il rettangolo).
 
-## Definizione versione e eventuale formato
+## Definizione eventuale formato
 
 Una volta terminato il comando iniziale, prima di avviare il back-up è necessario decidere, attraverso un coomando apposito, che tipo di operazione eseguire. La scelta ammette due possibili operazioni:  
 
@@ -39,19 +39,19 @@ Una volta terminato il comando iniziale, prima di avviare il back-up è necessar
 
 Nel primo caso sarà sufficiente, dopo il comando con il mouse, cliccare sul tasto 'a'/'A' per selezionare la versione completa del back-up che effettuerà una copia dell'intero contenuto della directory sorgene verso la directory destinazione, mantenendo la stessa gerarchia e organizzazione iniziale.  
 Nel secondo caso l'operazione di back-up sarà limitata solamente ai file con un'estensione precisa, trascurando tutti gli altri (eventuali) file e le sottocartelle. Alla fine dell'operazione, nella directory destinazione sarà pressente un elenco dei soli file con il formato specificato, senza l'eventuale organizzazione iniziale in sottocartelle.  
-'a'/'A' -> versione completa;  
-'b'/'B' -> versione parziale con copia dei file ".csv";  
-'c'/'C' -> versione parziale con copia dei file ".py";  
-'d'/'D' -> versione parziale con copia dei file ".txt";  
-'e'/'E' -> versione parziale con copia dei file ".java";  
-'f'/'F' -> versione parziale con copia dei file ".npy";  
-'g'/'G' -> versione parziale con copia dei file ".docx";  
-'h'/'H' -> versione parziale con copia dei file ".css";  
-'i'/'I' -> versione parziale con copia dei file ".js";  
-'j'/'J' -> versione parziale con copia dei file ".html";  
-'k'/'K' -> versione parziale con copia dei file ".mp3";  
-'l'/'L' -> versione parziale con copia dei file ".jpg";  
-'m'/'M' -> versione parziale con copia dei file ".png";
+'a'/'A' -> operazione completa;  
+'b'/'B' -> operazione parziale con copia dei file ".csv";  
+'c'/'C' -> operazione parziale con copia dei file ".py";  
+'d'/'D' -> operazione parziale con copia dei file ".txt";  
+'e'/'E' -> operazione parziale con copia dei file ".java";  
+'f'/'F' -> operazione parziale con copia dei file ".npy";  
+'g'/'G' -> operazione parziale con copia dei file ".docx";  
+'h'/'H' -> operazione parziale con copia dei file ".css";  
+'i'/'I' -> operazione parziale con copia dei file ".js";  
+'j'/'J' -> operazione parziale con copia dei file ".html";  
+'k'/'K' -> operazione parziale con copia dei file ".mp3";  
+'l'/'L' -> operazione parziale con copia dei file ".jpg";  
+'m'/'M' -> operazione parziale con copia dei file ".png";
 
 ## Comando di conferma
 
