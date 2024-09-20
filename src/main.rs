@@ -268,12 +268,15 @@ fn main(){
                     Key::KeyE=>formato=Some("java"),  // SE 'e'/'E' -> SOLO I .java
                     Key::KeyF=>formato=Some("npy"),   // SE 'f'/'F' -> SOLO I .npy
                     Key::KeyG=>formato=Some("docx"),  // SE 'g'/'G' -> SOLO I .docx
-                    Key::KeyH=>formato=Some("css"),   // SE 'f'/'F' -> SOLO I .css
-                    Key::KeyI=>formato=Some("js"),    // SE 'g'/'G' -> SOLO I .js
-                    Key::KeyJ=>formato=Some("html"),  // SE 'f'/'F' -> SOLO I .html
-                    Key::KeyK=>formato=Some("mp3"),   // SE 'g'/'G' -> SOLO I .mp3
-                    Key::KeyL=>formato=Some("jpg"),   // SE 'f'/'F' -> SOLO I .jpg
-                    Key::KeyM=>formato=Some("png"),   // SE 'g'/'G' -> SOLO I .png
+                    Key::KeyH=>formato=Some("css"),   // SE 'h'/'H' -> SOLO I .css
+                    Key::KeyI=>formato=Some("js"),    // SE 'i'/'I' -> SOLO I .js
+                    Key::KeyJ=>formato=Some("html"),  // SE 'j'/'J' -> SOLO I .html
+                    Key::KeyK=>formato=Some("mp3"),   // SE 'k'/'K' -> SOLO I .mp3
+                    Key::KeyL=>formato=Some("jpg"),   // SE 'l'/'L' -> SOLO I .jpg
+                    Key::KeyM=>formato=Some("png"),   // SE 'm'/'M' -> SOLO I .png
+                    Key::KeyN=>formato=Some("pdf"),   // SE 'n'/'N' -> SOLO I .pdf
+                    Key::KeyO=>formato=Some("ppt"),  // SE 'o'/'O' -> SOLO I .ppt
+                    Key::KeyP=>formato=Some("xlsx"),  // SE 'p'/'P' -> SOLO I .xlsx
                     _=>mouse.n_fase=1}}}
         else{
             match event.event_type{
