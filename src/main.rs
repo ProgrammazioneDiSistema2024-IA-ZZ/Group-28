@@ -11,8 +11,8 @@ use std::fs::{read_dir, create_dir, copy, OpenOptions, metadata};
 use std::io::{BufRead, BufReader, Write};
 use std::process::id;
 use std::thread::{spawn, sleep};
-use std::time::{Duration, SystemTime};
-use chrono::{DateTime,Utc};
+use std::time::Duration;
+use chrono::Local;
 use druid::widget::{Flex, Label};
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 use druid::{WidgetExt, WindowDesc, Color, AppLauncher, FontDescriptor, FontFamily};
@@ -172,7 +172,7 @@ fn leggi_info()->(String,String){
     return (linee.next().unwrap().unwrap(),linee.next().unwrap().unwrap());}
 
 fn crea_riepilogo(src:String,dim:u64,n_file:i32,n_cartelle:i32,tempo:f64,operazione:String){
-    let ora: DateTime<Utc>=SystemTime::now().into();                    // LEGGO 'ORA
+    let ora=Local::now();                   // LEGGO 'ORA
     let msg=format!("Operazione completata il {}.\n\nInformazioni aggiuntive:\n--{}\n--Numero file copiati: {}\n--\
                            Numero cartelle copiate: {}\n--Dimensione totale: {} bytes\n--\
                            Tempo di CPU: {} secondi",ora,operazione,n_file,n_cartelle,dim,tempo);    // MSG
@@ -186,15 +186,15 @@ fn scrivi_ogni_tanto(){                              // SCRIVE MESSAGGI A INTERV
     let mut system=System::new_all();
     let mut file =OpenOptions::new().append(true).open("src/Info.txt").expect("File non trovato");
     let mut msg;
-    let mut ora: DateTime<Utc>;                                            // PER OTTENERE L'ORA IN FORMATO LEGGIBILE
+    let mut ora;                                           // PER OTTENERE L'ORA IN FORMATO LEGGIBILE
     let mut uso;
     let pid=Pid::from_u32(id());
     loop{
         sleep(Duration::from_secs(120));                           // ATTENDI...
         system.refresh_all();                                            // LEGGE I DATI DAL SISTEMA
-        ora=SystemTime::now().into();
+        ora=Local::now();
         uso=system.process(pid).expect("Processo non trovato").cpu_usage();        // PRENDO LE INFORMAZIONI
-        msg=format!("\nConsumo di CPU dal processo {} fino all'istante {:?}: {}%",pid,ora,uso);
+        msg=format!("\nConsumo di CPU dal processo {} fino all'istante {}: {}%",pid,ora,uso);
         if file.write_all(msg.as_bytes()).is_err(){                // ERRORE DI SCRITTURA
             break;}}
     return;}
@@ -223,12 +223,12 @@ fn funzione_di_back_up(formato:Option<&str>){
     else{
         (dim_totale,numero_file)=copia_file_specifici(directory_sorgente,directory_destinazione.clone(),formato.unwrap()); // SOLO I RICHIESTI
         msg=format!("Descrizione: copia dei soli file con estensione '{}'",formato.unwrap());}
-        
+
     crea_riepilogo(directory_destinazione,dim_totale,numero_file,numero_cartelle,time.elapsed().as_secs_f64(),msg); // CREA IL FILE DI RIEPILOGO
     return;}
 
 fn crea_finestra_successo(src:String,dest:String){                         // CREA LA FINESTRA DI CONFERMA
-    let ora:DateTime<Utc>=SystemTime::now().into();
+    let ora=Local::now();
     let text=format!("\n\nBack-up in corso...\n\n\nSorgente: '{}'\n\nDestinazione: '{}'\n\n\nOra: {}",src,dest,ora);// TESTO DA SCRIVERE
     let label=Label::new(text).with_text_color(Color::WHITE);           // BLOCCO INTERNO CON IL TESTO
     let flex=Flex::column().with_child(label).background(Color::GREEN);        // FLEX DI ALLINEAMENTO ORIZZONTALE
@@ -258,7 +258,7 @@ fn main(){
                 EventType::ButtonRelease(_)=>mouse.fine_attesa(),                 // SE COMPLETI SI PASSA ALLA FFASE 2
                 _=>{}}}
         else if mouse.n_fase==2{                               // CASO DEL COMANDO DA TASTIERA
-            if let EventType::KeyPress(pulsante)=event.event_type{ 
+            if let EventType::KeyPress(pulsante)=event.event_type{
                 mouse.n_fase=3;
                 match pulsante{                                                       // DECIDI QUALE VERSIONE
                     Key::KeyA=>formato=None,          // SE 'a'/'A' -> TOTALE
