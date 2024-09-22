@@ -21,6 +21,7 @@ use cpu_time::ProcessTime;
 
 const HEIGHT:i32=1080;
 const WIDTH:i32=1920;
+const PATH_FILE:&str="src/Info.txt";
 
 struct Mouse{                // RAPPRESENTA IL MOUSE DURANTE IL COMANDO
     n_fase: usize,               // IN CHE FASE SIAMO (1:ATTESA RETTANGOLO, 2:ATTESA COMANDO, 3:ATTESA CONFERMA)
@@ -167,7 +168,7 @@ fn copia_file_specifici(sorgente:String,destinazione:String,formato:&str)->(u64,
     return (dim,n_file);}
 
 fn leggi_info()->(String,String){
-    let file=OpenOptions::new().read(true).open("src/Info.txt").expect("File sorgente non trovato");
+    let file=OpenOptions::new().read(true).open(PATH_FILE).expect("File sorgente non trovato");
     let mut linee=BufReader::new(file).lines();                  // LEGGO LE DUE LINEE
     return (linee.next().unwrap().unwrap(),linee.next().unwrap().unwrap());}
 
@@ -184,7 +185,7 @@ fn crea_riepilogo(src:String,dim:u64,n_file:i32,n_cartelle:i32,tempo:f64,operazi
 
 fn scrivi_ogni_tanto(){                              // SCRIVE MESSAGGI A INTERVALLI REGOLARI
     let mut system=System::new_all();
-    let mut file =OpenOptions::new().append(true).open("src/Info.txt").expect("File non trovato");
+    let mut file =OpenOptions::new().append(true).open(PATH_FILE).expect("File non trovato");
     let mut msg;
     let mut ora;                                           // PER OTTENERE L'ORA IN FORMATO LEGGIBILE
     let mut uso;
