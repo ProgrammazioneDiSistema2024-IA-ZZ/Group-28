@@ -157,7 +157,7 @@ fn copia_file_specifici(sorgente:String,destinazione:String,formato:&str)->(u64,
         path_destinazione=format!("{}/{}",destinazione,nome_file);                    // PATH SU CUI SCRIVERE
 
         if file_da_leggere.file_type().unwrap().is_file() && file_da_leggere.path().extension()==Some(formato.as_ref()){
-            if let Err(_)=copy(path_file.clone(),path_destinazione){        // COPIO IL FILE
+            if copy(path_file.clone(),path_destinazione).is_err(){        // COPIO IL FILE
                 panic!("Errore nel trasferimento del file '{}'",nome_file);}
             n_file=n_file+1;
             dim=dim+metadata(path_file).unwrap().len();}
@@ -172,11 +172,11 @@ fn leggi_info()->(String,String){
     let mut linee=BufReader::new(file).lines();                  // LEGGO LE DUE LINEE
     return (linee.next().unwrap().unwrap(),linee.next().unwrap().unwrap());}
 
-fn crea_riepilogo(src:String,dim:u64,n_file:i32,n_cartelle:i32,tempo:f64,operazione:String){
+fn crea_riepilogo(src:String,dim:u64,n_file:i32,n_cartelle:i32,tempo:u128,operazione:String){
     let ora=Local::now();                   // LEGGO 'ORA
     let msg=format!("Operazione completata il {}.\n\nInformazioni aggiuntive:\n--{}\n--Numero file copiati: {}\n--\
                            Numero cartelle copiate: {}\n--Dimensione totale: {} bytes\n--\
-                           Tempo di CPU: {} secondi",ora,operazione,n_file,n_cartelle,dim,tempo);    // MSG
+                           Tempo di CPU: {} micro-secondi",ora,operazione,n_file,n_cartelle,dim,tempo);    // MSG
     let path=format!("{}/Riepilogo.txt",src);                // CREO IL PATH E IL FILE
     let mut file =OpenOptions::new().create(true).write(true).open(path).expect("Impossibile creare il file");
     if file.write_all(msg.as_bytes()).is_err(){
@@ -218,14 +218,14 @@ fn funzione_di_back_up(formato:Option<&str>){
 
     spawn(|| crea_finestra_successo(src_clone,dest_clone));      // LANCIA LA FINESTRA
 
-    if formato==None{
+    if formato.is_none(){
         (dim_totale,numero_file,numero_cartelle)=copia_totale(directory_sorgente,directory_destinazione.clone()); // COPIA TUTTO
         msg="Descrizione: copia di tutti i file/directory".to_string();}
     else{
         (dim_totale,numero_file)=copia_file_specifici(directory_sorgente,directory_destinazione.clone(),formato.unwrap()); // SOLO I RICHIESTI
         msg=format!("Descrizione: copia dei soli file con estensione '{}'",formato.unwrap());}
 
-    crea_riepilogo(directory_destinazione,dim_totale,numero_file,numero_cartelle,time.elapsed().as_secs_f64(),msg); // CREA IL FILE DI RIEPILOGO
+    crea_riepilogo(directory_destinazione,dim_totale,numero_file,numero_cartelle,time.elapsed().as_micros(),msg); // CREA IL FILE DI RIEPILOGO
     return;}
 
 fn crea_finestra_successo(src:String,dest:String){                         // CREA LA FINESTRA DI CONFERMA

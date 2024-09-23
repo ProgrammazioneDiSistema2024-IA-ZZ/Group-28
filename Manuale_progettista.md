@@ -6,7 +6,7 @@
 - [Metodi e struttura interna della struct Mouse](#metodi-e-struttura-interna-della-struct-mouse)
 - [Gestione comando esterno](#gestione-comando-esterno)
 - [Scrittura sul file](#scrittura-sul-file)
-- [Operazione di back-up]
+- [Operazione di back-up](#operazione-di-back-up)
 - [Finestre grafiche]
 - [Riepilogo operazione]
 
@@ -44,12 +44,30 @@ La gestione del comando dall'esterno rappresenta il passo più cruciale e delica
 - n_fase=3: in quest'ultimo caso vengono invocati i metodi "cambia_posizione_per_conferma", "attivazione_conferma" e "disattivazione_conferma" per gestire gli stessi eventi citati sopra, più un evento, la pressione di un tasto, che permette di resettare l'operazione. Nell caso in cui "disattivazione_conferma" riconosca l'effettivo completamento del comando chiama la funzione di back up passandole come parametri "versione" e "formato", i 2 campi di cui ha bisogno per operare correttamente.
 
 ## Scrittura sul file
-Come richiesta aggiuntiva al back-up si vuole che, ogni 2 minuti, venga scritto su un file il consumo di CPU da parte del processo. Questa
-operazione è svolta dal thread secondario che esegue la funzione scrivi_ogni_tanto. Il corpo della funzione è quasi completamente composto da un
-loop senza fine che, dopo aver atteso mediante la funzione sleep per 2 minuti:
+
+Come richiesta aggiuntiva al back-up si vuole che, ogni 2 minuti, venga scritto su un file il consumo di CPU da parte del processo. Questa operazione è svolta dal thread secondario che esegue la funzione scrivi_ogni_tanto. Il corpo della funzione è quasi completamente composto da un loop senza fine che, dopo aver atteso mediante la funzione sleep per 2 minuti:
 
 - rinfresca le informazioni del sistema (istruzione necessaria per avere dati affidabili sul sistema);
 - legge l'ora attraverso la libreria "Local" del crate esterno "chrono";
-- ricava, attraverso il metodo "process" e il pid del processo corrente, la percentuale di utilizzo della CPU per mezzo del metodo "cpu_usage";
-- costruisce il messaggio da scrivere sfruttando i valori ricavati (ora,pid e percentuale);
-- scrive (se non riesce a scrivere, per qualsiasi motivo, interrompe il loop).
+- ricava, attraverso il metodo "process" e il pid del processo corrente ottenuto con il metodo "id", la percentuale di utilizzo della CPU per mezzo del metodo "cpu_usage";
+- costruisce il messaggio da scrivere sfruttando i valori ricavati (ora, pid e percentuale);
+- scrive sul file (se non riesce a scrivere, per qualsiasi motivo, interrompe il loop).
+
+## Operazione di back-up
+
+Una volta completato il comando di conferma, nel metodo "disattivazione_conferma", viene lanciata la funzione che esegue l'operazione di back-up, prendendo in ingresso il parametro rappresentante l'eventuale formato dei file che bisogna copiare.
+
+All'interno della funzione a prima cosa da fare è leggere dal file "Info.txt" le directory di sorgente e destinazione: questo viene fatto nella funzione leggi_info che, dopo aver letto il contenuto del file usando il metodo "lines" che genera un iteratore di stringhe che rappresentano le linee del file, restituisce una tupla contenente le prime 2 stringhe dell'iteratore. Il metodo "lines", da implementazione, restituisce un iteratore di tipo "Result", ma per ottenere le prime 2 stringhe senza utilizzare un'iterazione viene usato il metodo "next" degli iteratori che restituisce un dato di tipo "Option" che contiene il tipo precedente, a giustifica dei 2 "unwrap" nel valore di ritorno.
+
+Una volta ottenute le directory, dopo la dichiarazione di tutte le variabili utili all'operazione, come per esempio la dimensione totale dei file "dim_totale", o il numero di file spostati "n_file", viene utilizzata la funzione "now" della libreria "ProcessTime" per cronometrare l'esecuzione del back-up in termini di cicli di CPU impiegati. Dopo aver verificato l'esistenza della directory sorgente e aver creato la directory di destinazione viene generata la finestra di conferma a cui vengono passate le directory, ottenute per mezzo della funzione "leggi_info", per essere stampate nel messaggio di conferma. Una volta generata la finestra si prosegue analizzando il contenuto del parametro "formato": se è "None" si esegue la versione completa del back-up, copiando l'intera directory sorgente senza distinzioni sul formato; altrimenti si esegue la versione ridotta passando come parametro la stringa contenuta dentro "formato".
+
+Le 2 versioni dell'operazione sono sostanzialmente identiche e differiscono solo in alcuni punti, ma in ognuno dei casi:
+
+- Si tenta di aprire la directory passata come sorgente attraverso il metodo "read_dir" che restituisce un oggetto di tipo "Option"; nel caso questo contenga un oggetto lo si preleva ed assegna ad una variabile, sennò si ritorna al chiamante una tupla di valori nulli, per permettere al back-up di proseguire tranquillamente con eventuali altre cartelle;
+- L'oggetto preso mediante "read_dir" è iterabile, di conseguenza mediante un ciclo "for" si può avere accesso ad ogni file e/o directory contenuta in quella analizzata;
+- Una volta ottenuto il nome del nodo come stringa attraverso il metodo "file_name" si ottiene il path sorgente concatenando la directory parametro con il valore appena ottenuto, in quanto sono trattate come 2 semplici stringhe, separandoli mediante "/". La stessa cosa viene fatta utilizzando la stringa della directory di destinazione, al fine di costruire il nuovo path per il nodo;
+- A questo punto bisogna separare i 2 casi, ossia il caso in cui il nodo sia un file o una directory, basandosi sui metod "file_type", "is_file" e "is_dir".
+
+  - Nel primo caso si confronta l'eventuale formato richiesto con quello ottenuto mediante il metodo "extension" e, nel caso coincidano, si usa la funzione "copy" per copiare il file da un path all'altro (nel caso in cui non sia specificato un formato si copia direttamente il file). Se l'operazione non da errori si considera il file come correttamente copiato e si incrementano le variabili rappresentanti il numero di file copiati e la dimensione totale, rispettivamente "n_file" e "dim", di 1 nel caso di "n_file" e del risultato di un'operazione più complessa (metodi "metadata" e "len") sul file nel caso di "dim".
+
+  - Nel secondo caso, invece, bisogna prima creare la directory (nel caso si copi l'intero sottoalbero) e poi copiare i file: prima si invoca la funzione "create_dir" che restituisce un "Result" che indica l'esito dell'operazione e poi si richiama la funzione di copiatura passando come parametri non i valori ricevuti, bensì e directory costruite con il nome del nodo.
