@@ -207,7 +207,7 @@ fn funzione_di_back_up(formato:Option<&str>){
     let mut numero_cartelle=0;                                               // CONTATORE SOTTO-DIRECTORY
     let (src_clone,dest_clone)=(directory_sorgente.clone(),directory_destinazione.clone());
     let msg;                                                 // COSA SCRIVO COME OPERAZIONE NEL FILE DI RIEPILOGO
-    let time=ProcessTime::now();                                         // PARTE IL CRONOMETRO
+    let time;
 
     if read_dir(directory_sorgente.clone()).is_err(){            // VERIFICA SE ESISTE LA DIRECTORY SORGENTE
         spawn(|| crea_finestra_errore("\nDirectory sorgente non trovata"));
@@ -218,6 +218,7 @@ fn funzione_di_back_up(formato:Option<&str>){
 
     spawn(|| crea_finestra_successo(src_clone,dest_clone));      // LANCIA LA FINESTRA
 
+    time=ProcessTime::now();       // PARTE IL CRONOMETRO (CRONOMETRA IL PROCESSO -> PIU' VICINO AL BACKUP PARTE, PIU' ACCURATO E')
     if formato.is_none(){
         (dim_totale,numero_file,numero_cartelle)=copia_totale(directory_sorgente,directory_destinazione.clone()); // COPIA TUTTO
         msg="Descrizione: copia di tutti i file/directory".to_string();}

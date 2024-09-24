@@ -67,7 +67,7 @@ Come ultimo comando prima dell'operazione è necessaria una conferma. Per questo
 
 ## Conclusione operazione
 
-Una volta completato il comando di conferma verranno utilizzate e informazioni raccolte su versione e formato e quelle presenti nel file "Info.txt" per spostare i file. L'operazione ha inizio quando viene visualizzata la finestra di conferma e termine pochi secondi dopo; alla conclusione sarà presente una nuova directory con all'interno tutti i file e/o le cartelle copiate più un file di riepilogo contenente tutte le informazioni raccolte durante l'operazione quali:  
+Una volta completato il comando di conferma verranno utilizzate le informazioni raccolte sul formato e quelle estratte dal file "Info.txt" per spostare i file. L'operazione ha inizio quando viene visualizzata la finestra di conferma e termine pochi secondi dopo; alla conclusione sarà presente una nuova directory con all'interno tutti i file e/o le cartelle copiate più un file di riepilogo contenente tutte le informazioni raccolte durante l'operazione quali:  
 
 - Dimensione totale dei file copiati;  
 - Numero di file copiati;  
