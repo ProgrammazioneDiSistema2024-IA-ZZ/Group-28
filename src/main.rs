@@ -76,7 +76,6 @@ impl Mouse{
         self.pos_y=y;
         if valido==false{
             self.is_active_vec=[false;4];}                 // ERR=>AZZERA TUTTO
-        println!("{:?}",self.is_active_vec);
         return;}
 
     fn attivazione_conferma(&mut self){                // SI ATTIVA L'ATTESA DEL COMPLETAMENTO DEL COMANDO
@@ -97,7 +96,6 @@ impl Mouse{
             self.is_active=false;}                       // SE SFORI SPENGO TUTTO
         self.pos_x=x;
         self.pos_y=y;
-        println!("{}",self.is_active);
         return;}}
 
 fn copia_totale(sorgente:String, destinazione:String)->(u64, i32, i32){
