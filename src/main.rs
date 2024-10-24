@@ -21,7 +21,7 @@ use cpu_time::ProcessTime;
 
 const HEIGHT:i32=1080;
 const WIDTH:i32=1920;
-const PATH_FILE:&str="src/Info.txt";
+const PATH_FILE:&str="C:/Users/Alessandro/RustroverProjects/Group-28/src/Info.txt";
 
 struct Mouse{                // RAPPRESENTA IL MOUSE DURANTE IL COMANDO
     n_fase: usize,               // IN CHE FASE SIAMO (1:ATTESA RETTANGOLO, 2:ATTESA COMANDO, 3:ATTESA CONFERMA)
@@ -178,7 +178,7 @@ fn crea_riepilogo(src:String,dim:u64,n_file:i32,n_cartelle:i32,tempo:u128,operaz
     let path=format!("{}/Riepilogo.txt",src);                // CREO IL PATH E IL FILE
     let mut file =OpenOptions::new().create(true).write(true).open(path).expect("Impossibile creare il file");
     if file.write_all(msg.as_bytes()).is_err(){
-        panic!("Errore nel riepilogo operazione");}               // ERRORE DI SCRITTURA
+        crea_finestra_errore("Errore nel riepilogo operazione");}               // ERRORE DI SCRITTURA
     return;}
 
 fn scrivi_ogni_tanto(){                              // SCRIVE MESSAGGI A INTERVALLI REGOLARI
@@ -195,6 +195,7 @@ fn scrivi_ogni_tanto(){                              // SCRIVE MESSAGGI A INTERV
         uso=system.process(pid).expect("Processo non trovato").cpu_usage();        // PRENDO LE INFORMAZIONI
         msg=format!("\nConsumo di CPU dal processo {} fino all'istante {}: {}%",pid,ora,uso);
         if file.write_all(msg.as_bytes()).is_err(){                // ERRORE DI SCRITTURA
+            crea_finestra_errore("Errore nella scrittura sul file");
             break;}}
     return;}
 
@@ -289,5 +290,5 @@ fn main(){
     spawn(|| scrivi_ogni_tanto());                                                // MESSAGGI SUL FILE
 
     if listen(callback_comando).is_err(){                          // ATTESA
-        println!("Errore, impossibile inizializzzare l'operazione");}
+        crea_finestra_errore("Impossibile inizializzare l'operazione");}
     return;}
