@@ -7,6 +7,7 @@
 --- Comandi v
 --- Metterlo in background*/
 
+use std::env;
 use std::fs::{read_dir, create_dir, copy, OpenOptions, metadata};
 use std::io::{BufRead, BufReader, Write};
 use std::process::id;
@@ -18,10 +19,9 @@ use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 use druid::{WidgetExt, WindowDesc, Color, AppLauncher, FontDescriptor, FontFamily};
 use rdev::{listen, Event, EventType, Key};
 use cpu_time::ProcessTime;
-use rodio::{source::SineWave,OutputStream,Sink,Source};
+use rodio::{source::SineWave, OutputStream, Sink, Source};
+use auto_launch::AutoLaunchBuilder;
 
-const HEIGHT:i32=1080;
-const WIDTH:i32=1920;
 const PATH_FILE:&str="C:/Users/Alessandro/RustroverProjects/Group-28/src/Info.txt";
 
 struct Mouse{                // RAPPRESENTA IL MOUSE DURANTE IL COMANDO
@@ -51,23 +51,23 @@ impl Mouse{
         self.is_active_vec=[false;4];         // AZZERO TUTTO
         return;}
 
-    fn cambia_posizione_per_rettangolo(&mut self,x:i32,y:i32){       // SI MUOVE
+    fn cambia_posizione_per_rettangolo(&mut self,x:i32,y:i32,height:i32,width:i32){       // SI MUOVE
         let mut valido=true;
         match self.is_active_vec{
             [true,false,false,false]=>{
-                if x<=self.range_rettangolo && y>=HEIGHT-self.range_rettangolo{     // TOCCA IN BASSO A SX
+                if x<=self.range_rettangolo && y>=height-self.range_rettangolo{     // TOCCA IN BASSO A SX
                     self.is_active_vec[1]=true;}
                 else if x>self.range_rettangolo{                    // SFORA
                     valido=false;}}
             [true,true,false,false]=>{
-                if x>=WIDTH-self.range_rettangolo && y>=HEIGHT-self.range_rettangolo{     // TOCCA IN BASSO A DX
+                if x>=width-self.range_rettangolo && y>=height-self.range_rettangolo{     // TOCCA IN BASSO A DX
                     self.is_active_vec[2]=true;}
-                else if y<HEIGHT-self.range_rettangolo{         // SFORA
+                else if y<height-self.range_rettangolo{         // SFORA
                     valido=false;}}
             [true,true,true,false]=>{
-                if y<=self.range_rettangolo && x>=WIDTH-self.range_rettangolo{         // TOCCA IN ALTO A DX
+                if y<=self.range_rettangolo && x>=width-self.range_rettangolo{         // TOCCA IN ALTO A DX
                     self.is_active_vec[3]=true;}
-                else if x<WIDTH-self.range_rettangolo{           //  SFORA
+                else if x<width-self.range_rettangolo{           //  SFORA
                     valido=false;}}
             [true,true,true,true]=>{
                 if y>self.range_rettangolo{             // SFORA
@@ -87,8 +87,8 @@ impl Mouse{
             self.is_active=true;}                // DA ORA POS_PREC_Y E' L'ALTEZZA DEL MENO
         return;}
 
-    fn disattivazione_conferma(&mut self,formato:Option<&str>){   // AVVIA lA FUNZIONE O SPEGNE TUTTO
-        if self.is_active && self.pos_x>=WIDTH-self.range_rettangolo{
+    fn disattivazione_conferma(&mut self,formato:Option<&str>,width:i32){   // AVVIA lA FUNZIONE O SPEGNE TUTTO
+        if self.is_active && self.pos_x>=width-self.range_rettangolo{
             suono_comando(2);
             funzione_di_back_up(formato);         // CONTROLLO DELL'ALTEZZA NEL MOVIMENTO
             suono_comando(3);                                // FINITO
@@ -103,6 +103,7 @@ impl Mouse{
         self.pos_x=x;
         self.pos_y=y;
         return;}}
+
 fn suono_comando(n_volte:i32){
     let (_stream,stream_handle)=OutputStream::try_default().unwrap();    // CREO L'AUDIO
     let frequenza=440.0;
@@ -265,14 +266,18 @@ fn crea_finestra_errore(msg: &str){                         // CREA LA FINESTRA 
         panic!("Errore nel lancio dell'applicazione");}                                // ERRORE NON RECUPERABILE
     return;}
 
-fn main(){
+fn ottieni_dimensioni()->(u32,u32){                     // SOLO MOMENTANEO
+    return (1920,1080);}
+
+fn inizio_operazione(){
+    let (width,height)=ottieni_dimensioni();
     let mut mouse=Mouse::new();                                 // RAPPRESENTA IL MOUSE
     let mut formato=None;                                            // VARIABILI PER LA FUNZIONE DI BACK UP
 
     let callback_comando=move|event:Event|{
         if mouse.n_fase==1{            // CASO DEL COMANDO DEL RETTANGOLO
             match event.event_type{
-                EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_rettangolo(x as i32,y as i32),    // SE TI MUOVI
+                EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_rettangolo(x as i32,y as i32,height as i32,width as i32),
                 EventType::ButtonPress(_)=>mouse.inizio_attesa(),                                 // CLICK->ATTIVO LA LETTURA DEL RETTANGOLO
                 EventType::ButtonRelease(_)=>mouse.fine_attesa(),                 // SE COMPLETI SI PASSA ALLA FFASE 2
                 _=>{}}}
@@ -301,7 +306,7 @@ fn main(){
             match event.event_type{
                 EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_conferma(x as i32,y as i32),             // SE TI MUOVI
                 EventType::ButtonPress(_)=>mouse.attivazione_conferma(),                  // CLICK->ATTIVO (FORSE) IL COMANDO
-                EventType::ButtonRelease(_)=>mouse.disattivazione_conferma(formato),  // SE COMPLETI IL - AVVIO IL BACKUP
+                EventType::ButtonRelease(_)=>mouse.disattivazione_conferma(formato,width as i32),  // SE COMPLETI IL - AVVIO IL BACKUP
                 EventType::KeyPress(_)=>mouse.n_fase=1,                                     // ESCAPE
                 _=>{}}}};
 
@@ -309,4 +314,18 @@ fn main(){
 
     if listen(callback_comando).is_err(){                          // ATTESA
         crea_finestra_errore("Impossibile inizializzare l'operazione");}
+    return;}
+
+fn main(){
+    let path=env::current_exe().unwrap().as_os_str().to_str().unwrap().to_string();            // PERCORSO DELL'ESEGUIBILE
+    let auto_launch=AutoLaunchBuilder::new().set_app_name("Group28").set_app_path(path.as_str()).build()
+        .expect("Errore nell'avvio app");                   // CREO L'ISTANZA E CARICO L'APPLICAZIONE CORRENTE
+    
+    match auto_launch.is_enabled(){                // E' GIA' AVVIATO?
+        Ok(bool)=>{
+            if bool==true{
+                inizio_operazione();}            // SE E' SI' L'AVVIO
+            else{
+                auto_launch.enable().expect("Errore nell'abilitazione");}}     // LA ABILITO
+        Err(_)=>println!("Errore nell'abilitare l'auto-launch")}                // ERRORE
     return;}
