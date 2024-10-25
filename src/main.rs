@@ -18,6 +18,7 @@ use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 use druid::{WidgetExt, WindowDesc, Color, AppLauncher, FontDescriptor, FontFamily};
 use rdev::{listen, Event, EventType, Key};
 use cpu_time::ProcessTime;
+use rodio::{source::SineWave,OutputStream,Sink,Source};
 
 const HEIGHT:i32=1080;
 const WIDTH:i32=1920;
@@ -45,6 +46,7 @@ impl Mouse{
 
     fn fine_attesa(&mut self){                     // SE LASCI E SEI CIRCA LI' PASSO ALLA SECONDA ATTESA
         if self.pos_x<=self.range_rettangolo && self.pos_y<=self.range_rettangolo && self.is_active_vec==[true,true,true,true]{
+            suono_comando(2);
             self.n_fase=2;}
         self.is_active_vec=[false;4];         // AZZERO TUTTO
         return;}
@@ -75,6 +77,7 @@ impl Mouse{
         self.pos_x=x;
         self.pos_y=y;
         if valido==false{
+            suono_comando(1);                      // SUONO DI ERRORE
             self.is_active_vec=[false;4];}                 // ERR=>AZZERA TUTTO
         return;}
 
@@ -86,17 +89,32 @@ impl Mouse{
 
     fn disattivazione_conferma(&mut self,formato:Option<&str>){   // AVVIA lA FUNZIONE O SPEGNE TUTTO
         if self.is_active && self.pos_x>=WIDTH-self.range_rettangolo{
+            suono_comando(2);
             funzione_di_back_up(formato);         // CONTROLLO DELL'ALTEZZA NEL MOVIMENTO
+            suono_comando(3);                                // FINITO
             self.n_fase=1;}
         self.is_active=false;          // AZZERA TUTTO
         return;}
 
     fn cambia_posizione_per_conferma(&mut self,x:i32,y:i32){               // IL MOUSE SI SPOSTA
-        if self.pos_y>self.pos_prec_y+self.range_conferma || self.pos_y<self.pos_prec_y-self.range_conferma{
+        if (self.pos_y>self.pos_prec_y+self.range_conferma || self.pos_y<self.pos_prec_y-self.range_conferma) && self.is_active==true{
+            suono_comando(1);                      // ERRORE
             self.is_active=false;}                       // SE SFORI SPENGO TUTTO
         self.pos_x=x;
         self.pos_y=y;
         return;}}
+fn suono_comando(n_volte:i32){
+    let (_stream,stream_handle)=OutputStream::try_default().unwrap();    // CREO L'AUDIO
+    let frequenza=440.0;
+    let sink=Sink::try_new(&stream_handle).unwrap();
+    let mut sine_wave;
+    
+    for _ in 0..n_volte{
+        sine_wave=SineWave::new(frequenza);            // GENERA IL SEGNALE SINUSOIDALE A F=440.0 HZ
+        sink.append(sine_wave.take_duration(Duration::from_millis(200))); // DURATA A 200MS
+        sink.sleep_until_end();               // PLAY
+        sleep(Duration::from_millis(100));}       // PAUSA TRA I BIP
+    return;}
 
 fn copia_totale(sorgente:String, destinazione:String)->(u64, i32, i32){
     let dir_sorgente;                                                   // DIRECTORY SORGENTE
@@ -278,7 +296,7 @@ fn main(){
                     Key::KeyN=>formato=Some("pdf"),   // SE 'n'/'N' -> SOLO I .pdf
                     Key::KeyO=>formato=Some("ppt"),  // SE 'o'/'O' -> SOLO I .ppt
                     Key::KeyP=>formato=Some("xlsx"),  // SE 'p'/'P' -> SOLO I .xlsx
-                    _=>mouse.n_fase=1}}}
+                    _=>{mouse.n_fase=1;suono_comando(1);}}}}        // ERRORE
         else{
             match event.event_type{
                 EventType::MouseMove{x,y}=>mouse.cambia_posizione_per_conferma(x as i32,y as i32),             // SE TI MUOVI
