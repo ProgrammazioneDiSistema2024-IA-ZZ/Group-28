@@ -10,12 +10,11 @@
 use std::env;
 use std::fs::{read_dir, create_dir, copy, OpenOptions, metadata};
 use std::io::{BufRead, BufReader, Write};
-use std::process::id;
 use std::thread::{spawn, sleep};
 use std::time::Duration;
 use chrono::Local;
 use druid::widget::{Flex, Label};
-use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
+use sysinfo::{ProcessExt, System, SystemExt, get_current_pid};
 use druid::{WidgetExt, WindowDesc, Color, AppLauncher, FontDescriptor, FontFamily};
 use rdev::{listen, Event, EventType, Key};
 use cpu_time::ProcessTime;
@@ -206,7 +205,7 @@ fn scrivi_ogni_tanto(){                              // SCRIVE MESSAGGI A INTERV
     let mut msg;
     let mut ora;                                           // PER OTTENERE L'ORA IN FORMATO LEGGIBILE
     let mut uso;
-    let pid=Pid::from_u32(id());
+    let pid=get_current_pid().unwrap();                          // PID DEL PROCESSO
     loop{
         sleep(Duration::from_secs(120));                           // ATTENDI...
         system.refresh_all();                                            // LEGGE I DATI DAL SISTEMA

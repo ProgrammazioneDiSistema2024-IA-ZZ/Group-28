@@ -11,9 +11,10 @@
 
 ## Descrizione e scopo
 
-Quest'applicazione ha il compito di aiutare ad effettuare il back-up totale/parziale dei file da una dirctory ad un'altra, ed è specificatamente pensata per operare qualora lo schermo non sia agibile, attraverso comandi dal mouse e dalla tasiera.
+Quest'applicazione ha il compito di aiutare ad effettuare il back-up totale/parziale dei file da una dirctory ad un'altra, ed è specificatamente pensata per operare qualora lo schermo non sia agibile, attraverso comandi dal mouse e dalla tastiera.
 Mediante l'utilizzo di finestre grafiche di conferma o errore e di file di riepilogo sarà possibile monitorare l'esecuzione e avere un
 riepilogo chiaro su ciò che è stato fatto.
+La prima volta che si desidera avviare l'applicazione, questo deve essere fatto manualmente, per permettere allo stesso processo di essere impostato come operazione da eseguire automaticamente all'avvio del sistema.
 
 ## Preparazione
 
@@ -29,6 +30,7 @@ Per questo comando bisogna:
 - Cliccare sull'angolo in alto a sinistra, o il più vicino possibile (massimo 20 pixel in ogni direzione);  
 - Mantenendo il pulsante cliccato, raggiungere uno ad uno tutti gli angoli dello schermo in senso antiorario, mantenendosi il più possibile sul bordo dello schermo (accettabilità entro 20 pixel dal bordo);  
 - Una volta raggiunto nuovamente l'angolo iniziale rilasciare il pulsante, sempre mantenendosi nel range sopra indicato (concludendo così il rettangolo).
+- se l'operazione è andata a buon fine verrà emesso un doppio segnale acustico, atrimenti, al momento di un errore, ne sarà emesso uno singolo
 
 ## Definizione eventuale formato
 
@@ -57,6 +59,8 @@ Nel secondo caso l'operazione di back-up sarà limitata solamente ai file con un
 - 'o'/'O' -> operazione parziale con copia dei file ".ppt";
 - 'p'/'P' -> operazione parziale con copia dei file ".xlsx";
 
+Qualora il tasto premuto non appartenga all'elenco preimpostato, verrà emesso un segnale singolo di errore.
+
 ## Comando di conferma
 
 Come ultimo comando prima dell'operazione è necessaria una conferma. Per questo comando è sufficiente tracciare una linea orizzontale da un estremo all'altro del monitor. Come nel caso del comando iniziale bisogna:
@@ -64,6 +68,7 @@ Come ultimo comando prima dell'operazione è necessaria una conferma. Per questo
 - Cliccare in un punto qualsiasi lungo il bordo sinistro dello schermo, o il più vicino possibile (massimo 20 pixel dal bordo);  
 - Mantenendo il pulsante cliccato, tracciare una linea orizzontale fino alla estremità opposta dello schermo, mantenendosi entro un range di accettabilità di 100 pixel.  
 - Rilasciare il pulsante del mouse all'interno dell'area delimitata dai 20 pixel finali.
+- Se l'operazione è andata a buon fine anche in questo caso verrà emesso un doppio segnale acustico; altrimenti, al momento dell'errore, ossia quando viene sforato il range consentito, ne verrà emesso uno singolo.
 
 ## Conclusione operazione
 
@@ -74,3 +79,5 @@ Una volta completato il comando di conferma verranno utilizzate le informazioni 
 - Numero di cartelle copiate;  
 - Data e ora dell'operazione;  
 - Durata dell'operazione (in cicli di CPU).
+
+Un triplo segnale acustico segna il completamento dell'operazione.

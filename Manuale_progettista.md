@@ -3,8 +3,10 @@
 ## Indice
 
 - [Descrizione generale](#descrizione-generale)
+- [Avvio](#avvio)
 - [Metodi e struttura interna della struct Mouse](#metodi-e-struttura-interna-della-struct-mouse)
 - [Gestione comando esterno](#gestione-comando-esterno)
+- [Segnali acustici](#segnali-acustici)
 - [Scrittura sul file](#scrittura-sul-file)
 - [Operazione di back-up](#operazione-di-back-up)
 - [Finestre grafiche](#finestre-grafiche)
@@ -14,6 +16,19 @@
 
 L'esecuzione dell'operazione è suddivisa in 4 fasi logiche, fisicamente separate fra loro dal campo `n_fase` della struct Mouse.  
 Nella prima fase (`n_fase=1` come da inizializzazione) si attende l'esecuzione del comando iniziale, il rettangolo che deve coprire l'intero schermo rimanendo all'interno di un range di accettabilità concepito come cornice interna nella quale il comando è ancora valido. Una volta completato il comando iniziale il campo `n_fase` viene portato a 2 e in questa fase si attende un comando da tastiera che va a riempire il parametro `formato` che verra usato per il back-up. In questa fase buona parte dei tasti ('a'/'A' - 'm'/'M') è associata ad un comportamento specifico che va dall'operazione completa ('a'/'A'), che copia l'intero sottoalbero dalla directory sorgente a quella di destinazione, alla copia dei soli file con quell'estensione specificata. Una volta riempita questa variabile si passa alla terza fase (`n_fase=3`) in cui si attende il completamento del comando di conferma. Questo comando consiste in una linea orizzontale, da un lato all'altro dello schermo, a qualsiasi altezza, rimanendo anche in questo caso all'interno di un range di accettabilità. L'ultima fase invece, l'unica a non essere caratterizzata da un valore di `n_fase`, ma che viene avviata dopo la conferma, è la vera e propria operazione di back-up, con le relative finestre grafiche, al termine della quale si ritorna alla fase iniziale. Le dimensioni dello schermo in pixel, infine, sono gestite da due costanti il cui valore, però, è soggettivo, e quindi deve essere adattato alla risoluzione del PC in uso.
+
+## Avvio
+
+Al momento dell'avvio del processo viene costruito subito l'oggetto eseguibile da salvare immediatamente come eseguibile automaticamente all'avvio. Per fare questo si usa il crate `auto-launch` e la sua libreria interna `AutoLaunchBuilder`.
+
+- Come prima cosa si ottiene, attraverso la libreria `env`, il path dell'eseguibile, concatenando il metodo `current_exe()` con quelli necessari per ottenere un valore in formato `String`.
+- A questo punto interviene `AutoLaunchBuilder` che, dopo aver settato il nome dell'applicazione, usa il path appena generato per costruire l'applicazione stessa.
+Nota: il path viene generato come `String` e successivamente trasformato  in `&str` per questioni legate ai tempi di vita.
+- L'applicazione generate potrebbe già essere settata come automatica quindi bisogna verificarlo con il metodo `is_enabled()`:
+  - nel caso non si riuscisse ad ottenere tale informazione si lancia un errore;
+  - nel caso si riuscisse, se l'applicazione non è settata la si setta, altrimenti si avvia l'operazione di attesa comandi.
+
+Nota: Questo controllo è necessario in quanto i due file, quello che configura e quello da configurare, sono lo stesso file che, pertanto, riconfigurerebbe l'eseguibile ad ogni avvio.
 
 ## Metodi e struttura interna della struct Mouse
 
@@ -43,13 +58,35 @@ La gestione del comando dall'esterno rappresenta il passo più cruciale e delica
 - `n_fase=2`: il singolo evento accettato in questa fase è il `ButtonPress` e il valore di `n_fase` viene immediatamente portato a 3 qualunque sia il tasto premuto, ma se poi non è uno dei tasti accettati si ritorna in fase 1. Una volta eseguito l'unwrap del codice del tasto si controlla, attraverso un match, se rispecchia uno dei casi accettati e, se così è, si riempie il parametro `formato` secondo la logica;
 - `n_fase=3`: in quest'ultimo caso vengono invocati i metodi `cambia_posizione_per_conferma`, `attivazione_conferma` e `disattivazione_conferma` per gestire gli stessi eventi citati sopra, più un evento, la pressione di un tasto, che permette di resettare l'operazione. Nell caso in cui `disattivazione_conferma` riconosca l'effettivo completamento del comando chiama la funzione di back up passandole come parametro `formato`, il campo di cui ha bisogno per operare correttamente.
 
+## Segnali acustici
+
+Durante la preparazione al backup e l'interazione con l'utente vengono attivate delle segnalazioni acustiche costruite attraverso il crate `rodio` e le sue funzioni interne `source::SineWave` per generare il suono, OutputStrem per generare il canale audio e Sink per riprodurlo.
+Ogni volta che si vuole riprodurre l'audio viene chiamata la funzione `suono_comando` che riceve in ingresso il numero di volte che deve essere riprodotto il suono. I passaggi da seguire sono:
+
+- la chiamata alla funzione `suono_comando` passando in ingresso un intero;
+- l'apertura della coppia (stream,stream_handle) attraverso `OutputStream::try_default().unwrap`;
+- la generazione della coda segnali da riprodurre con `Sink::try_new(&stream_handle).unwrap()` passando lo stream creato al punto 2;
+- in un iterazione basata sul numero passato come parametro:
+
+  - si genera il segnale audio attraverso `SineWave::new(frequenza)`;
+  - lo si aggiunge in coda consumandolo (da cui la necessità di rigenerarlo nell'iterazione successiva);
+  - lo si riproduce con `sleep_until_end()`;
+  - si attende per uun tempo preimpostato così da permettere la separazione fra i segnali;
+
+I segnali vengoono riprodotti:
+
+- al completamento del segnale iniziale (doppio) o al fallimento di quest'ultimo (singolo segnale);
+- se viene premuto un pulsante non valido (singolo segnale);
+- al completamento del segnale di conferma (doppio) o al fallimento dell'operazione (singolo segnale);
+- al completamento dell'operazione di back-up (ttriplo segnale);
+
 ## Scrittura sul file
 
 Come richiesta aggiuntiva al back-up si vuole che, ogni 2 minuti, venga scritto su un file il consumo di CPU da parte del processo. Questa operazione è svolta dal thread secondario che esegue la funzione `scrivi_ogni_tanto`. Il corpo della funzione è quasi completamente composto da un loop senza fine che, dopo aver atteso mediante la funzione sleep per 2 minuti:
 
 - rinfresca le informazioni del sistema (istruzione necessaria per avere dati affidabili sul sistema);
 - legge l'ora attraverso la libreria `Local` del crate esterno `chrono`;
-- ricava, attraverso il metodo `process` e il pid del processo corrente ottenuto con il metodo `id`, la percentuale di utilizzo della CPU per mezzo del metodo `cpu_usage`;
+- ricava, attraverso il metodo `process` e il pid del processo corrente ottenuto con il metodo `get-current-pid`, la percentuale di utilizzo della CPU per mezzo del metodo `cpu_usage`;
 - costruisce il messaggio da scrivere sfruttando i valori ricavati (ora, pid e percentuale);
 - scrive sul file (se non riesce a scrivere, per qualsiasi motivo, interrompe il loop).
 
