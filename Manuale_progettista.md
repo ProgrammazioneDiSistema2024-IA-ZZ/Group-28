@@ -5,6 +5,7 @@
 - [Descrizione generale](#descrizione-generale)
 - [Avvio](#avvio)
 - [Metodi e struttura interna della struct Mouse](#metodi-e-struttura-interna-della-struct-mouse)
+- [Gestione risoluzione](#gestione-risoluzione)
 - [Gestione comando esterno](#gestione-comando-esterno)
 - [Segnali acustici](#segnali-acustici)
 - [Scrittura sul file](#scrittura-sul-file)
@@ -49,6 +50,24 @@ La struct `Mouse` implementa anche dei metodi utilizzati per gestire i vari even
 - `attivazione_conferma` è il metodo duale a `inizio_attesa`, però per il comando di conferma. Se il mouse, qualunque sia il valore di `pos_y`, si trova all'estremo sinistro, o lì intorno, viene salvato il valore di `pos_y` nel campo `pos_prec_y` in modo da avere un riscontro alla fine del comando per vedere se è stato tracciato correttamente. Inoltre, viene portato a `true` il booleano, in modo da distinguere una corretta esecuzione da una che, nonostante abbia portato la freccia a destra, non ha rispettato il range, o sia stata interrotta rilasciando il mouse in anticipo;
 - `disattivazione_conferma`, invece, si occupa del rilascio del mouse in fase di conferma. Anche qui: se ci troviamo all'estremo destro, considerando il range, e il booleano segna che l'operazione è ancora vaida si lancia direttamente la funzione di back-up, passando come parametro la variabile ricevuta dal metodo (formato);
 - `cambia_posizione_per_conferma`, infine, gestisce il movimento nella fase 3. Come in fase 1, una volta ricevute le nuove coordinate, si verifica che la coordinata y non sfori il range prestabilito (range separato pensato per la sola conferma). Questo controllo viene fatto qui e non ripetuto in `disattivazione_conferma` in quanto ridondante.
+
+## Gestione risoluzione
+
+Per gestire correttamente le coordinate e lo spostamento del mouse è necessario conoscere la risoluzione dello schermo in pixel; questo viene fatto dalla funzione `ottieni_dimensioni`, che le ottiene attraverso un comando sul terminale. Per farlo prima di tutto bisogna generare il processo:
+
+- Attraverso la funzione `Command::new("cmd")` si istanzia un nuovo processo che agisce sul terminale;
+- Con il metodo `args` si passano al processo figlio gli argomenti, ossia il codice per ottenere la risoluzione;
+- Con il metodo `output()` si attende la terminazione prelevando il risultato;
+Nota: il processo potrebbe non essere stato creato a causa di un qualsiasi errore, pertanto si gestisce questa eventualità con `expect()`.
+
+Ora nella variabile `program`, oltre ad altre informazioni, è presente la risoluzione del display. Per ottenerla:
+
+- Si estrae il risultato attraverso `String::from_utf8_lossy(&programm.stdout)`;
+- Con il metodo `lines()` si trasforma il risultato in una collezione di stringhe;
+- Si preleva solo la linea effettivamente utile con `nth(1).unwrap().to_string()`;
+- Si ottengono i valori separando la stringa in corrispondenza del separatore (25 spazi) e con `nth(n).unwrap()` si prendono in 2 variabili;
+- Si trasformano i valori ottenuti in valori interi con `parse::<i32>().expect("Errore di conversione)`;
+Nota: il secondo valore ottenuto dopo la separazione contiene spazi dopo che devono essere eliminati, prima della conversione, con il metodo `trim()`.
 
 ## Gestione comando esterno
 

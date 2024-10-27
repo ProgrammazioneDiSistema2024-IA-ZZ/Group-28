@@ -10,6 +10,7 @@
 use std::env;
 use std::fs::{read_dir, create_dir, copy, OpenOptions, metadata};
 use std::io::{BufRead, BufReader, Write};
+use std::process::Command;
 use std::thread::{spawn, sleep};
 use std::time::Duration;
 use chrono::Local;
@@ -265,8 +266,16 @@ fn crea_finestra_errore(msg: &str){                         // CREA LA FINESTRA 
         panic!("Errore nel lancio dell'applicazione");}                                // ERRORE NON RECUPERABILE
     return;}
 
-fn ottieni_dimensioni()->(u32,u32){                     // SOLO MOMENTANEO
-    return (1920,1080);}
+fn ottieni_dimensioni()->(i32,i32){                     // SOLO MOMENTANEO
+    let programm=Command::new("cmd")                                 // LANCIA IL CMD
+        .args(["/C","wmic path Win32_VideoController get CurrentHorizontalResolution, CurrentVerticalResolution"])// CODICE CMD
+        .output()                              // ATTENDO LA CONCLUSIONE
+        .expect("Impossibile ottenere la risoluzione orizzontale");               // ERRORE
+    
+    let dims =String::from_utf8_lossy(&programm.stdout).lines().nth(1).unwrap().to_string();    // RISULTATI
+    let dim_o=dims.split("                         ").nth(0).unwrap().parse::<i32>().expect("Errore di conversione");
+    let dim_v=dims.split("                         ").nth(1).unwrap().trim().parse::<i32>().expect("Errore di conversione");
+    return (dim_o,dim_v);}
 
 fn inizio_operazione(){
     let (width,height)=ottieni_dimensioni();
