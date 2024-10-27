@@ -23,12 +23,11 @@ Nella prima fase (`n_fase=1` come da inizializzazione) si attende l'esecuzione d
 Al momento dell'avvio del processo viene costruito subito l'oggetto eseguibile da salvare immediatamente come eseguibile automaticamente all'avvio. Per fare questo si usa il crate `auto-launch` e la sua libreria interna `AutoLaunchBuilder`.
 
 - Come prima cosa si ottiene, attraverso la libreria `env`, il path dell'eseguibile, concatenando il metodo `current_exe()` con quelli necessari per ottenere un valore in formato `String`.
-- A questo punto interviene `AutoLaunchBuilder` che, dopo aver settato il nome dell'applicazione, usa il path appena generato per costruire l'applicazione stessa.
+- A questo punto interviene `AutoLaunchBuilder` che, dopo aver settato il nome dell'applicazione, usa il path appena generato per costruire l'applicazione stessa. 
 Nota: il path viene generato come `String` e successivamente trasformato  in `&str` per questioni legate ai tempi di vita.
 - L'applicazione generate potrebbe già essere settata come automatica quindi bisogna verificarlo con il metodo `is_enabled()`:
   - nel caso non si riuscisse ad ottenere tale informazione si lancia un errore;
-  - nel caso si riuscisse, se l'applicazione non è settata la si setta, altrimenti si avvia l'operazione di attesa comandi.
-
+  - nel caso si riuscisse, se l'applicazione non è settata la si setta, altrimenti si avvia l'operazione di attesa comandi.  
 Nota: Questo controllo è necessario in quanto i due file, quello che configura e quello da configurare, sono lo stesso file che, pertanto, riconfigurerebbe l'eseguibile ad ogni avvio.
 
 ## Metodi e struttura interna della struct Mouse
@@ -57,7 +56,7 @@ Per gestire correttamente le coordinate e lo spostamento del mouse è necessario
 
 - Attraverso la funzione `Command::new("cmd")` si istanzia un nuovo processo che agisce sul terminale;
 - Con il metodo `args` si passano al processo figlio gli argomenti, ossia il codice per ottenere la risoluzione;
-- Con il metodo `output()` si attende la terminazione prelevando il risultato;
+- Con il metodo `output()` si attende la terminazione prelevando il risultato;  
 Nota: il processo potrebbe non essere stato creato a causa di un qualsiasi errore, pertanto si gestisce questa eventualità con `expect()`.
 
 Ora nella variabile `program`, oltre ad altre informazioni, è presente la risoluzione del display. Per ottenerla:
@@ -66,7 +65,7 @@ Ora nella variabile `program`, oltre ad altre informazioni, è presente la risol
 - Con il metodo `lines()` si trasforma il risultato in una collezione di stringhe;
 - Si preleva solo la linea effettivamente utile con `nth(1).unwrap().to_string()`;
 - Si ottengono i valori separando la stringa in corrispondenza del separatore (25 spazi) e con `nth(n).unwrap()` si prendono in 2 variabili;
-- Si trasformano i valori ottenuti in valori interi con `parse::<i32>().expect("Errore di conversione)`;
+- Si trasformano i valori ottenuti in valori interi con `parse::<i32>().expect("Errore di conversione)`;  
 Nota: il secondo valore ottenuto dopo la separazione contiene spazi dopo che devono essere eliminati, prima della conversione, con il metodo `trim()`.
 
 ## Gestione comando esterno
