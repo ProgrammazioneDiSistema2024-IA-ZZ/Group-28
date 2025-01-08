@@ -10,7 +10,7 @@
 use std::env;
 use std::fs::{read_dir, create_dir, copy, OpenOptions, metadata};
 use std::io::{BufRead, BufReader, Write};
-use std::process::Command;
+use std::process::{Command};
 use std::thread::{spawn, sleep};
 use std::time::Duration;
 use chrono::Local;
@@ -21,6 +21,7 @@ use rdev::{listen, Event, EventType, Key};
 use cpu_time::ProcessTime;
 use rodio::{source::SineWave, OutputStream, Sink, Source};
 use auto_launch::AutoLaunchBuilder;
+
 
 const PATH_FILE:&str="C:/Users/lucav/Documents/GitHub/Group-28/src/Info.txt";
 
@@ -266,13 +267,34 @@ fn crea_finestra_errore(msg: &str){                         // CREA LA FINESTRA 
         panic!("Errore nel lancio dell'applicazione");}                                // ERRORE NON RECUPERABILE
     return;}
 
-fn ottieni_dimensioni()->(i32,i32){                     // SOLO MOMENTANEO
+fn ottieni_dimensioni()->(i32,i32){  // SOLO MOMENTANEO
+    let mut graph_line :usize= 0;
+    let p= Command::new("cmd")
+        .args(["/C", "wmic path Win32_VideoController get Name, CurrentRefreshRate"])
+        .output()
+        .expect("Impossobile ottenere le schede del dispositivo");
+
+    // Converti l'output in una stringa
+    let p_str = String::from_utf8_lossy(&p.stdout);
+    let schede: Vec<_>= p_str.lines().skip(1).collect();
+    println!("{:?}", schede);
+
+    // Trova la prima scheda grafica attiva
+    for line in 0..schede.len() {
+        if schede[line].chars().nth(0).unwrap().is_digit(10) {
+            graph_line=line+1;
+            //println!("{}", graph_line);
+            break;
+        }
+    }
+
+
     let programm=Command::new("cmd")                                 // LANCIA IL CMD
         .args(["/C","wmic path Win32_VideoController get CurrentHorizontalResolution, CurrentVerticalResolution"])// CODICE CMD
         .output()                              // ATTENDO LA CONCLUSIONE
         .expect("Impossibile ottenere la risoluzione orizzontale");               // ERRORE
     
-    let dims =String::from_utf8_lossy(&programm.stdout).lines().filter(|&x| x.len()>0).nth(1).unwrap().to_string();    // RISULTATI
+    let dims =String::from_utf8_lossy(&programm.stdout).lines().nth(graph_line).unwrap().to_string();    // RISULTATI
     let dim_o=dims.split("                         ").nth(0).unwrap().parse::<i32>().expect("Errore di conversione");
     let dim_v=dims.split("                         ").nth(1).unwrap().trim().parse::<i32>().expect("Errore di conversione");
     return (dim_o,dim_v);}
