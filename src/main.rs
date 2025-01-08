@@ -22,7 +22,7 @@ use cpu_time::ProcessTime;
 use rodio::{source::SineWave, OutputStream, Sink, Source};
 use auto_launch::AutoLaunchBuilder;
 
-const PATH_FILE:&str="C:/Users/Alessandro/RustroverProjects/Group-28/src/Info.txt";
+const PATH_FILE:&str="C:/Users/lucav/Documents/GitHub/Group-28/src/Info.txt";
 
 struct Mouse{                // RAPPRESENTA IL MOUSE DURANTE IL COMANDO
     n_fase: usize,               // IN CHE FASE SIAMO (1:ATTESA RETTANGOLO, 2:ATTESA COMANDO, 3:ATTESA CONFERMA)
@@ -272,7 +272,7 @@ fn ottieni_dimensioni()->(i32,i32){                     // SOLO MOMENTANEO
         .output()                              // ATTENDO LA CONCLUSIONE
         .expect("Impossibile ottenere la risoluzione orizzontale");               // ERRORE
     
-    let dims =String::from_utf8_lossy(&programm.stdout).lines().nth(1).unwrap().to_string();    // RISULTATI
+    let dims =String::from_utf8_lossy(&programm.stdout).lines().filter(|&x| x.len()>0).nth(1).unwrap().to_string();    // RISULTATI
     let dim_o=dims.split("                         ").nth(0).unwrap().parse::<i32>().expect("Errore di conversione");
     let dim_v=dims.split("                         ").nth(1).unwrap().trim().parse::<i32>().expect("Errore di conversione");
     return (dim_o,dim_v);}
