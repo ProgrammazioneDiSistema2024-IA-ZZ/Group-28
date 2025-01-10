@@ -314,7 +314,7 @@ fn crea_finestra_errore(msg: &str) {                                            
 }
 
 fn ottieni_dimensioni() -> (i32, i32) {      // SOLO MOMENTANEO
-    let mut graph_line:usize = 0;
+    let mut graph_index:usize = 0;
     let p = Command::new("cmd")
         .args(["/C", "wmic path Win32_VideoController get Name, CurrentRefreshRate"])
         .output()
@@ -323,13 +323,11 @@ fn ottieni_dimensioni() -> (i32, i32) {      // SOLO MOMENTANEO
     // CONVERTI L'OUTPUT IN UNA STRINGA
     let p_str = String::from_utf8_lossy(&p.stdout);
     let schede:Vec<_> = p_str.lines().skip(1).collect();
-    println!("{:?}", schede);
 
     // TROVA LA PRIMA SCHEDA GRAFICA ATTIVA
     for line in 0..schede.len() {
         if schede[line].chars().nth(0).unwrap().is_digit(10) {
-            graph_line = line + 1;
-            //println!("{}", graph_line);
+            graph_index = line + 1;
             break;
         }
     }
@@ -340,7 +338,7 @@ fn ottieni_dimensioni() -> (i32, i32) {      // SOLO MOMENTANEO
         .output()                                                                                                    // ATTENDO LA CONCLUSIONE
         .expect("Impossibile ottenere la risoluzione orizzontale");                                                  // ERRORE
     
-    let dims = String::from_utf8_lossy(&programm.stdout).lines().nth(graph_line).unwrap().to_string();               // RISULTATI
+    let dims = String::from_utf8_lossy(&programm.stdout).lines().nth(graph_index).unwrap().to_string();               // RISULTATI
     let dim_o = dims.split("                         ").nth(0).unwrap().parse::<i32>().expect("Errore di conversione");
     let dim_v = dims.split("                         ").nth(1).unwrap().trim().parse::<i32>().expect("Errore di conversione");
     return (dim_o,dim_v);
