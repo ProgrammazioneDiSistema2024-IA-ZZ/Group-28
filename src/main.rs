@@ -14,7 +14,7 @@ use rodio::{source::SineWave, OutputStream, Sink, Source};
 use auto_launch::AutoLaunchBuilder;
 
 
-const PATH_FILE:&str = "C:/Users/lucav/Documents/GitHub/Group-28/src/Info.txt";
+const PATH_FILE:&str = "C:/Users/Alessandro/RustRoverProjects/Group-28/src/Info.txt";
 
 struct Mouse {                      // RAPPRESENTA IL MOUSE DURANTE IL COMANDO
     n_fase:usize,                   // IN CHE FASE SIAMO (1:ATTESA RETTANGOLO, 2:ATTESA COMANDO, 3:ATTESA CONFERMA)
@@ -153,7 +153,6 @@ fn copia_totale(sorgente:String, destinazione:String) -> (u64, i32, i32) {
         Err(_) => {return (0,0,0);}
         Ok(dir) => {dir_sorgente=dir;}
     }
-
     for nodo in dir_sorgente {                                                     // PER OGNI FILE
         file_da_leggere = nodo.unwrap();
         nome_file = file_da_leggere.file_name().to_str().unwrap().to_string();     // PRENDO IL NOME
@@ -313,7 +312,7 @@ fn crea_finestra_errore(msg: &str) {                                            
     return;
 }
 
-fn ottieni_dimensioni() -> (i32, i32) {      // SOLO MOMENTANEO
+fn ottieni_dimensioni() -> (i32, i32) {
     let mut graph_index:usize = 0;
     let p = Command::new("cmd")
         .args(["/C", "wmic path Win32_VideoController get Name, CurrentRefreshRate"])
@@ -336,7 +335,7 @@ fn ottieni_dimensioni() -> (i32, i32) {      // SOLO MOMENTANEO
     let programm = Command::new("cmd")                                                                               // LANCIA IL CMD
         .args(["/C","wmic path Win32_VideoController get CurrentHorizontalResolution, CurrentVerticalResolution"])   // CODICE CMD
         .output()                                                                                                    // ATTENDO LA CONCLUSIONE
-        .expect("Impossibile ottenere la risoluzione orizzontale");                                                  // ERRORE
+        .expect("Impossibile ottenere la risoluzione");                                                  // ERRORE
     
     let dims = String::from_utf8_lossy(&programm.stdout).lines().nth(graph_index).unwrap().to_string();               // RISULTATI
     let dim_o = dims.split("                         ").nth(0).unwrap().parse::<i32>().expect("Errore di conversione");
@@ -402,7 +401,7 @@ fn inizio_operazione() {
 fn main() {
     let path = env::current_exe().unwrap().as_os_str().to_str().unwrap().to_string();       // PERCORSO DELL'ESEGUIBILE
     let auto_launch = AutoLaunchBuilder::new().set_app_name("Group28").set_app_path(path.as_str()).build()
-        .expect("Errore nell'avvio app");                                                   // CREO L'ISTANZA E CARICO L'APPLICAZIONE CORRENTE
+        .expect("Errore nell'avvio app");                                      // CREO L'ISTANZA E CARICO L'APPLICAZIONE CORRENTE
     
     match auto_launch.is_enabled() {                                                        // E' GIA' AVVIATO?
         Ok(bool) => {
