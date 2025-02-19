@@ -314,14 +314,14 @@ fn crea_finestra_errore(msg: &str) {                                            
 
 fn ottieni_dimensioni() -> (i32, i32) {
     let mut graph_index:usize = 0;
-    let p = Command::new("cmd")
+    let out = Command::new("cmd")
         .args(["/C", "wmic path Win32_VideoController get Name, CurrentRefreshRate"])
         .output()
         .expect("Impossobile ottenere le schede del dispositivo");
 
     // CONVERTI L'OUTPUT IN UNA STRINGA
-    let p_str = String::from_utf8_lossy(&p.stdout);
-    let schede:Vec<_> = p_str.lines().skip(1).collect();
+    let out_str = String::from_utf8_lossy(&out.stdout);
+    let schede:Vec<_> = out_str.lines().skip(1).collect();
 
     // TROVA LA PRIMA SCHEDA GRAFICA ATTIVA
     for line in 0..schede.len() {
@@ -409,7 +409,7 @@ fn main() {
                 inizio_operazione();                                                        // SE E' SI' L'AVVIO
             }            
             else {
-                auto_launch.enable().expect("Errore nell'abilitazione");                    // LA ABILITO
+                auto_launch.enable().expect("Errore nell'abilitazione");                    // LA ABILITO E ESEGUO
             }
         }     
         Err(_) => println!("Errore nell'abilitare l'auto-launch")                           // ERRORE
